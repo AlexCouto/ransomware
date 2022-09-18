@@ -28,11 +28,17 @@ func EncryptAES(msg []byte, key []byte) []byte {
 }
 
 // Decrypts messages encrypted with EncryptAES()
-func DecryptAES(msg []byte, key []byte) []byte {
+func DecryptAES(msg []byte, key []byte) ([]byte, error) {
 
 	// Creates cipher block and wraps it into galois counter mode
-	cipherBlock, _ := aes.NewCipher(key)
-	gcm, _ := cipher.NewGCM(cipherBlock)
+	cipherBlock, err := aes.NewCipher(key)
+	if err != nil {
+		return nil, err
+	}
+	gcm, err := cipher.NewGCM(cipherBlock)
+	if err != nil {
+		return nil, err
+	}
 
 	// Separates nonce from message
 	nonceSize := gcm.NonceSize()
@@ -40,10 +46,10 @@ func DecryptAES(msg []byte, key []byte) []byte {
 
 	decriptedMessage, err := gcm.Open(nil, nonce, msg, nil)
 	if err != nil {
-		fmt.Println(err)
+		return nil, err
 	}
 
-	return decriptedMessage
+	return decriptedMessage, nil
 }
 
 func EncryptRSA(msg []byte, publikKey *rsa.PublicKey) []byte {
@@ -85,7 +91,10 @@ func Decrypt(msg []byte, privateKey *rsa.PrivateKey) []byte {
 
 	aesKey := DecryptRSA(aesKeyEncrypted, privateKey)
 
-	decrypted := DecryptAES(encryptedMessage, aesKey)
+	decrypted, err := DecryptAES(encryptedMessage, aesKey)
+	if err != nil {
+		return msg
+	}
 
 	return decrypted
 }

