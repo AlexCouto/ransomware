@@ -24,9 +24,15 @@ func (file *File) Encrypt(pubKey *rsa.PublicKey) error {
 	osFile.Read(buffer)
 	osFile.Close()
 
-	encrypted := enc.Encrypt(buffer, pubKey)
+	encrypted, err := enc.Encrypt(buffer, pubKey)
+	if err != nil {
+		return err
+	}
 
-	osFile, _ = os.Create(file.Path)
+	osFile, err = os.Create(file.Path)
+	if err != nil {
+		return err
+	}
 	_, err = osFile.Write(encrypted)
 	if err != nil {
 		return err

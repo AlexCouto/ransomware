@@ -23,10 +23,16 @@ func StorePrivateKey(privateKey *rsa.PrivateKey) {
 	pemPrivateFile.Close()
 }
 
-func ReadPrivateKey(filePath string) *rsa.PrivateKey {
-	privateKeyFile, _ := os.Open(filePath)
+func ReadPrivateKey(filePath string) (*rsa.PrivateKey, error) {
+	privateKeyFile, err := os.Open(filePath)
+	if err != nil {
+		return nil, err
+	}
 
-	pemFileInfo, _ := privateKeyFile.Stat()
+	pemFileInfo, err := privateKeyFile.Stat()
+	if err != nil {
+		return nil, err
+	}
 	size := pemFileInfo.Size()
 
 	pemBytes := make([]byte, size)
@@ -35,9 +41,12 @@ func ReadPrivateKey(filePath string) *rsa.PrivateKey {
 	data, _ := pem.Decode([]byte(pemBytes))
 	privateKeyFile.Close()
 
-	privateKey, _ := x509.ParsePKCS1PrivateKey(data.Bytes)
+	privateKey, err := x509.ParsePKCS1PrivateKey(data.Bytes)
+	if err != nil {
+		return nil, err
+	}
 
-	return privateKey
+	return privateKey, nil
 }
 
 func StorePublicKey(publicKey *rsa.PublicKey) {
@@ -69,8 +78,6 @@ func ReadPublicKey(filePath string) *rsa.PublicKey {
 
 func DecodePublicKey(pubKeyBytes []byte) *rsa.PublicKey {
 
-	// buffer := bufio.NewReader()
-	// buffer.Read(pubKeyBytes)
 	data, remainder := pem.Decode([]byte(pubKeyBytes))
 	if remainder != nil {
 		fmt.Println(string(remainder))

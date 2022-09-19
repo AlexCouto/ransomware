@@ -6,16 +6,21 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha256"
-	"fmt"
 )
 
 // Encrypts message with AES using Galois/Counter Mode
 // Returns (cipherText appended to nonce , key)
-func EncryptAES(msg []byte, key []byte) []byte {
+func EncryptAES(msg []byte, key []byte) ([]byte, error) {
 
 	// Creates cipher block and wraps it into galois counter mode
-	cipherBlock, _ := aes.NewCipher(key)
-	gcm, _ := cipher.NewGCM(cipherBlock)
+	cipherBlock, err := aes.NewCipher(key)
+	if err != nil {
+		return nil, err
+	}
+	gcm, err := cipher.NewGCM(cipherBlock)
+	if err != nil {
+		return nil, err
+	}
 
 	//Generates random nonce
 	nonce := make([]byte, gcm.NonceSize())
@@ -24,7 +29,7 @@ func EncryptAES(msg []byte, key []byte) []byte {
 	//Encrypts the message and appends it to the nonce
 	output := gcm.Seal(nonce, nonce, msg, nil)
 
-	return output
+	return output, nil
 }
 
 // Decrypts messages encrypted with EncryptAES()
@@ -52,14 +57,14 @@ func DecryptAES(msg []byte, key []byte) ([]byte, error) {
 	return decriptedMessage, nil
 }
 
-func EncryptRSA(msg []byte, publikKey *rsa.PublicKey) []byte {
+func EncryptRSA(msg []byte, publikKey *rsa.PublicKey) ([]byte, error) {
 
 	encryptedMessage, err := rsa.EncryptOAEP(sha256.New(), rand.Reader, publikKey, msg, nil)
 	if err != nil {
-		fmt.Println(err)
+		return nil, err
 	}
 
-	return encryptedMessage
+	return encryptedMessage, nil
 }
 
 func DecryptRSA(msg []byte, privateKey *rsa.PrivateKey) []byte {
@@ -71,17 +76,23 @@ func DecryptRSA(msg []byte, privateKey *rsa.PrivateKey) []byte {
 
 // Generates random 16 byte AES key and encrypts message with it, encrypts the AES key
 // with RSA and then returns the encrypted AES key concatenated with the encrypted message
-func Encrypt(msg []byte, publicKey *rsa.PublicKey) []byte {
+func Encrypt(msg []byte, publicKey *rsa.PublicKey) ([]byte, error) {
 
 	aesKey := make([]byte, 16)
 	rand.Read(aesKey)
 
-	encrypted := EncryptAES(msg, aesKey)
-	aesKeyEncrypted := EncryptRSA(aesKey, publicKey)
+	encrypted, err := EncryptAES(msg, aesKey)
+	if err != nil {
+		return nil, err
+	}
+	aesKeyEncrypted, err := EncryptRSA(aesKey, publicKey)
+	if err != nil {
+		return nil, err
+	}
 
 	encrypted = append(aesKeyEncrypted, encrypted...)
 
-	return encrypted
+	return encrypted, nil
 }
 
 // Decrypts messages encrypted with Encrypt()
