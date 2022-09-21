@@ -1,5 +1,13 @@
 package utils
 
+import (
+	"bytes"
+	"io/ioutil"
+	"os/exec"
+
+	"golang.org/x/text/encoding/charmap"
+)
+
 var (
 	SPubKeyPem = []byte(`-----BEGIN RSA PUBLIC KEY-----
 MIIBCgKCAQEAypl+4F/OxQCBJXPVXa//VmoON8hqaSJ15XDccriExWFHOF31kxCG
@@ -34,4 +42,33 @@ func Contains[T comparable](s []T, e T) bool {
 		}
 	}
 	return false
+}
+
+func decodePage850(msg []byte) (string, error) {
+
+	reader := charmap.CodePage850.NewDecoder().Reader(bytes.NewReader(msg))
+
+	bytesDecoded, err := ioutil.ReadAll(reader)
+	if err != nil {
+		return "", err
+	}
+
+	return string(bytesDecoded), nil
+}
+
+func GetDesktopPath() (string, error) {
+	pathBytes, err := exec.Command("Powershell", `[Environment]::GetFolderPath("Desktop")`).Output()
+	if err != nil {
+		return "", err
+	}
+
+	desktopPath, err := decodePage850(pathBytes)
+	if err != nil {
+		return "", err
+	}
+
+	n := len(desktopPath)
+	desktopPath = desktopPath[0 : n-2]
+
+	return desktopPath, nil
 }

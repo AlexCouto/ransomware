@@ -30,6 +30,7 @@ func main() {
 
 func decryptFiles(dirPath string, cPrivKey *rsa.PrivateKey) {
 
+	var ext string
 	waitGroup.Add(1)
 	go func() {
 		filepath.WalkDir(dirPath, func(path string, d fs.DirEntry, err error) error {
@@ -46,8 +47,8 @@ func decryptFiles(dirPath string, cPrivKey *rsa.PrivateKey) {
 				if err != nil {
 					return err
 				}
-
-				filesToVisit <- io.File{Info: info, Path: path, Extension: ""}
+				ext = filepath.Ext(path)
+				filesToVisit <- io.File{Info: info, Path: path, Extension: ext}
 			}
 			return nil
 		})

