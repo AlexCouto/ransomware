@@ -26,6 +26,11 @@ func main() {
 
 	decryptFiles(dir, privKey)
 
+	// drives := io.GetDrives()
+	// for _, drive := range drives {
+	// 	decryptFiles(drive, privKey)
+	// }
+
 }
 
 func decryptFiles(dirPath string, cPrivKey *rsa.PrivateKey) {

