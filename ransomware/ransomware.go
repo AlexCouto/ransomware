@@ -47,7 +47,7 @@ func generateClientKeys(servPubKey *rsa.PublicKey) (*rsa.PublicKey, error) {
 	cPubKey := &(cPrivKey.PublicKey)
 
 	privBytes := x509.MarshalPKCS1PrivateKey(cPrivKey)
-	privBytesEncrypted, err := enc.Encrypt(privBytes, servPubKey)
+	privBytesEncrypted, err := enc.RSAAESEncrypt(privBytes, servPubKey)
 	if err != nil {
 		return nil, err
 	}

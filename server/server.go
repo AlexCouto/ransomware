@@ -15,7 +15,7 @@ var (
 func decryptClientKey(path string) {
 	block, _ := os.ReadFile(path)
 
-	decodedBlock := enc.Decrypt(block, sPrivKey)
+	decodedBlock := enc.RSAAESDecrypt(block, sPrivKey)
 
 	pemBlock := &pem.Block{Type: "RSA PRIVATE KEY", Bytes: decodedBlock}
 

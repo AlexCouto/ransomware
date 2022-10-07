@@ -1,84 +1,17 @@
 package enc
 
 import (
-	"crypto/aes"
-	"crypto/cipher"
+	"crypto/ecdsa"
+	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/rsa"
-	"crypto/sha256"
 )
-
-// Encrypts message with AES using Galois/Counter Mode
-// Returns (cipherText appended to nonce , key)
-func EncryptAES(msg []byte, key []byte) ([]byte, error) {
-
-	// Creates cipher block and wraps it into galois counter mode
-	cipherBlock, err := aes.NewCipher(key)
-	if err != nil {
-		return nil, err
-	}
-	gcm, err := cipher.NewGCM(cipherBlock)
-	if err != nil {
-		return nil, err
-	}
-
-	//Generates random nonce
-	nonce := make([]byte, gcm.NonceSize())
-	rand.Read(nonce)
-
-	//Encrypts the message and appends it to the nonce
-	output := gcm.Seal(nonce, nonce, msg, nil)
-
-	return output, nil
-}
-
-// Decrypts messages encrypted with EncryptAES()
-func DecryptAES(msg []byte, key []byte) ([]byte, error) {
-
-	// Creates cipher block and wraps it into galois counter mode
-	cipherBlock, err := aes.NewCipher(key)
-	if err != nil {
-		return nil, err
-	}
-	gcm, err := cipher.NewGCM(cipherBlock)
-	if err != nil {
-		return nil, err
-	}
-
-	// Separates nonce from message
-	nonceSize := gcm.NonceSize()
-	nonce, msg := msg[:nonceSize], msg[nonceSize:]
-
-	decriptedMessage, err := gcm.Open(nil, nonce, msg, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return decriptedMessage, nil
-}
-
-func EncryptRSA(msg []byte, publikKey *rsa.PublicKey) ([]byte, error) {
-
-	encryptedMessage, err := rsa.EncryptOAEP(sha256.New(), rand.Reader, publikKey, msg, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return encryptedMessage, nil
-}
-
-func DecryptRSA(msg []byte, privateKey *rsa.PrivateKey) []byte {
-
-	decryptedMessage, _ := rsa.DecryptOAEP(sha256.New(), rand.Reader, privateKey, msg, nil)
-
-	return decryptedMessage
-}
 
 // Generates random 16 byte AES key and encrypts message with it, encrypts the AES key
 // with RSA and then returns the encrypted AES key concatenated with the encrypted message
-func Encrypt(msg []byte, publicKey *rsa.PublicKey) ([]byte, error) {
+func RSAAESEncrypt(msg []byte, publicKey *rsa.PublicKey) ([]byte, error) {
 
-	aesKey := make([]byte, 16)
+	aesKey := make([]byte, 32)
 	rand.Read(aesKey)
 
 	encrypted, err := EncryptAES(msg, aesKey)
@@ -96,11 +29,48 @@ func Encrypt(msg []byte, publicKey *rsa.PublicKey) ([]byte, error) {
 }
 
 // Decrypts messages encrypted with Encrypt()
-func Decrypt(msg []byte, privateKey *rsa.PrivateKey) []byte {
+func RSAAESDecrypt(msg []byte, privateKey *rsa.PrivateKey) []byte {
 
 	aesKeyEncrypted, encryptedMessage := msg[:256], msg[256:]
 
 	aesKey := DecryptRSA(aesKeyEncrypted, privateKey)
+
+	decrypted, err := DecryptAES(encryptedMessage, aesKey)
+	if err != nil {
+		return msg
+	}
+
+	return decrypted
+}
+
+func ECDHAESEncrypt(msg []byte, publicKey *ecdsa.PublicKey) ([]byte, error) {
+
+	aesKey, cipherPublicKey, err := ECDHGenerateEncryptionKey(publicKey)
+	if err != nil {
+		return nil, err
+	}
+
+	cipherPublicMarshal := elliptic.MarshalCompressed(Curve, cipherPublicKey.X, cipherPublicKey.Y)
+
+	encrypted, err := EncryptAES(msg, aesKey)
+	if err != nil {
+		return nil, err
+	}
+
+	encrypted = append(cipherPublicMarshal, encrypted...)
+
+	return encrypted, nil
+}
+
+func ECDHAESDecrypt(msg []byte, privateKey *ecdsa.PrivateKey) []byte {
+
+	cipherPublicMarshal, encryptedMessage := msg[:33], msg[33:]
+
+	x, y := elliptic.UnmarshalCompressed(Curve, cipherPublicMarshal)
+
+	cipherPublicKey := &ecdsa.PublicKey{Curve: Curve, X: x, Y: y}
+
+	aesKey := ECDHGenerateDecryptionKey(privateKey, cipherPublicKey)
 
 	decrypted, err := DecryptAES(encryptedMessage, aesKey)
 	if err != nil {

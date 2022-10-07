@@ -24,7 +24,7 @@ func (file *File) Encrypt(pubKey *rsa.PublicKey) error {
 	osFile.Read(buffer)
 	osFile.Close()
 
-	encrypted, err := enc.Encrypt(buffer, pubKey)
+	encrypted, err := enc.RSAAESEncrypt(buffer, pubKey)
 	if err != nil {
 		return err
 	}
@@ -61,7 +61,7 @@ func (file *File) Decrypt(privKey *rsa.PrivateKey) error {
 
 		osFile.Close()
 
-		decrypted := enc.Decrypt(buffer, privKey)
+		decrypted := enc.RSAAESDecrypt(buffer, privKey)
 
 		osFile, _ = os.Create(file.Path)
 		_, err = osFile.Write(decrypted)
