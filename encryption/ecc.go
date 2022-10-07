@@ -7,7 +7,10 @@ import (
 	"crypto/sha256"
 )
 
-var Curve = elliptic.P256()
+var (
+	Curve = elliptic.P256()
+	N     = Curve.Params().N
+)
 
 func ECDHGenerateEncryptionKey(pubKey *ecdsa.PublicKey) ([]byte, *ecdsa.PublicKey, error) {
 	cipherTextPrivKey, err := ecdsa.GenerateKey(Curve, rand.Reader)

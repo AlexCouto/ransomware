@@ -2,8 +2,15 @@ package utils
 
 import (
 	"bytes"
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/hmac"
+	"crypto/sha512"
+	"encoding/binary"
 	"io/ioutil"
+	"math/big"
 	"os/exec"
+	enc "ransomware/encryption"
 
 	"golang.org/x/text/encoding/charmap"
 )
@@ -72,3 +79,56 @@ func GetDesktopPath() (string, error) {
 
 	return desktopPath, nil
 }
+
+func ComputeHmac512(msg []byte, key []byte) [64]byte {
+	var result [64]byte
+	hash := hmac.New(sha512.New, key)
+	hash.Write(msg)
+
+	copy(result[:], hash.Sum(nil))
+	return result
+}
+
+func Serialize32Int(i uint32) []byte {
+	out := make([]byte, 4)
+	binary.BigEndian.PutUint32(out, i)
+
+	return out
+}
+
+func Serialize256Int(i *big.Int) []byte {
+	out := make([]byte, 32)
+	i.FillBytes(out)
+
+	return out
+}
+
+func SerializeCoords(x *big.Int, y *big.Int) []byte {
+	return elliptic.MarshalCompressed(enc.Curve, x, y)
+}
+
+func Parse256(sequence []byte) *big.Int {
+	return new(big.Int).SetBytes(sequence[:])
+}
+
+func Point(p []byte) (*big.Int, *big.Int) {
+	x, y := enc.Curve.ScalarBaseMult(p)
+	return x, y
+}
+
+func NewPrivateKey(D *big.Int) ecdsa.PrivateKey {
+
+	pubKey := NewPublicKey(Point(D.Bytes()))
+	privKey := ecdsa.PrivateKey{PublicKey: pubKey, D: D}
+	return privKey
+
+}
+
+func NewPublicKey(X *big.Int, Y *big.Int) ecdsa.PublicKey {
+	pubKey := ecdsa.PublicKey{Curve: enc.Curve, X: X, Y: Y}
+	return pubKey
+}
+
+// func SerializeCoords(pubKey *ecdsa.PublicKey) []byte {
+
+// }
