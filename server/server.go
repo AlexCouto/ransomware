@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	sPrivKey, _ = io.ReadPrivateKey("privateKey.pem")
+	sPrivKey, _ = io.ReadRSAPrivateKey("privateKey.pem")
 )
 
 func decryptClientKey(path string) {

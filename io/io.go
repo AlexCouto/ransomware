@@ -13,9 +13,9 @@ import (
 	"golang.org/x/sys/windows"
 )
 
-func StorePrivateKey(privateKey *rsa.PrivateKey) {
+func StoreRSAPrivateKey(path string, privateKey *rsa.PrivateKey) {
 
-	pemPrivateFile, _ := os.Create("privateKey.pem")
+	pemPrivateFile, _ := os.Create(path)
 
 	pemPrivateBlock := &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(privateKey)}
 
@@ -23,7 +23,7 @@ func StorePrivateKey(privateKey *rsa.PrivateKey) {
 	pemPrivateFile.Close()
 }
 
-func ReadPrivateKey(filePath string) (*rsa.PrivateKey, error) {
+func ReadRSAPrivateKey(filePath string) (*rsa.PrivateKey, error) {
 	privateKeyFile, err := os.Open(filePath)
 	if err != nil {
 		return nil, err
@@ -49,9 +49,9 @@ func ReadPrivateKey(filePath string) (*rsa.PrivateKey, error) {
 	return privateKey, nil
 }
 
-func StorePublicKey(publicKey *rsa.PublicKey) {
+func StoreRSAPublicKey(path string, publicKey *rsa.PublicKey) {
 
-	pemPublicFile, _ := os.Create("publicKey.pem")
+	pemPublicFile, _ := os.Create(path)
 
 	pemPublicBlock := &pem.Block{Type: "RSA PUBLIC KEY", Bytes: x509.MarshalPKCS1PublicKey(publicKey)}
 
@@ -59,7 +59,7 @@ func StorePublicKey(publicKey *rsa.PublicKey) {
 	pemPublicFile.Close()
 }
 
-func ReadPublicKey(filePath string) *rsa.PublicKey {
+func ReadRSAPublicKey(filePath string) *rsa.PublicKey {
 	publicKeyFile, _ := os.Open(filePath)
 
 	pemFileInfo, _ := publicKeyFile.Stat()
@@ -76,7 +76,7 @@ func ReadPublicKey(filePath string) *rsa.PublicKey {
 	return publicKey
 }
 
-func DecodePublicKey(pubKeyBytes []byte) *rsa.PublicKey {
+func DecodeRSAPublicKey(pubKeyBytes []byte) *rsa.PublicKey {
 
 	data, remainder := pem.Decode([]byte(pubKeyBytes))
 	if remainder != nil {

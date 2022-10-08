@@ -16,7 +16,7 @@ var (
 )
 
 func main() {
-	privKey, err := io.ReadPrivateKey("cPrivateKey.pem")
+	privKey, err := io.ReadRSAPrivateKey("cPrivateKey.pem")
 	if err != nil {
 		panic(err)
 	}
