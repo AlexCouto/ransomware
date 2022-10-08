@@ -1,4 +1,4 @@
-package enc
+package rsaLib
 
 import (
 	"crypto/rand"

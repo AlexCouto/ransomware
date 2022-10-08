@@ -1,4 +1,4 @@
-package enc
+package aesLib
 
 import (
 	"crypto/aes"

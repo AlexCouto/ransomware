@@ -5,6 +5,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"ransomware/encryption/rsaLib"
 	"ransomware/io"
 	"ransomware/utils"
 	"sync"
@@ -16,7 +17,7 @@ var (
 )
 
 func main() {
-	privKey, err := io.ReadRSAPrivateKey("cPrivateKey.pem")
+	privKey, err := rsaLib.ReadRSAPrivateKey("cPrivateKey.pem")
 	if err != nil {
 		panic(err)
 	}

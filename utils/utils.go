@@ -8,7 +8,10 @@ import (
 	"io/ioutil"
 	"math/big"
 	"os/exec"
+	"strings"
+	"unicode/utf16"
 
+	"golang.org/x/sys/windows"
 	"golang.org/x/text/encoding/charmap"
 )
 
@@ -104,6 +107,13 @@ func Parse256(sequence []byte) *big.Int {
 	return new(big.Int).SetBytes(sequence[:])
 }
 
-// func SerializeCoords(pubKey *ecdsa.PublicKey) []byte {
+func GetDrives() []string {
+	bufferLength, _ := windows.GetLogicalDriveStrings(0, nil)
 
-// }
+	buffer := make([]uint16, bufferLength)
+	windows.GetLogicalDriveStrings(bufferLength, &buffer[0])
+
+	s := string(utf16.Decode(buffer))
+
+	return strings.Split(strings.TrimRight(s, "\x00"), "\x00")
+}

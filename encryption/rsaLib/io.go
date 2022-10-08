@@ -1,4 +1,4 @@
-package io
+package rsaLib
 
 import (
 	"bufio"
@@ -7,10 +7,6 @@ import (
 	"encoding/pem"
 	"fmt"
 	"os"
-	"strings"
-	"unicode/utf16"
-
-	"golang.org/x/sys/windows"
 )
 
 func StoreRSAPrivateKey(path string, privateKey *rsa.PrivateKey) {
@@ -86,15 +82,4 @@ func DecodeRSAPublicKey(pubKeyBytes []byte) *rsa.PublicKey {
 	publicKey, _ := x509.ParsePKCS1PublicKey(data.Bytes)
 
 	return publicKey
-}
-
-func GetDrives() []string {
-	bufferLength, _ := windows.GetLogicalDriveStrings(0, nil)
-
-	buffer := make([]uint16, bufferLength)
-	windows.GetLogicalDriveStrings(bufferLength, &buffer[0])
-
-	s := string(utf16.Decode(buffer))
-
-	return strings.Split(strings.TrimRight(s, "\x00"), "\x00")
 }

