@@ -2,6 +2,7 @@ package main
 
 import (
 	"crypto/rsa"
+	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -67,7 +68,10 @@ func decryptFiles(dirPath string, cPrivKey *rsa.PrivateKey) {
 	waitGroup.Add(1)
 	go func() {
 		for file := range filesToVisit {
-			io.DecryptFile(&file, encryption.RSAAESDecrypt, cPrivKey)
+			err := io.DecryptFile(&file, encryption.RSAAESDecrypt, cPrivKey)
+			if err != nil {
+				fmt.Println("Error decrypting file", file.Path, "Error:", err)
+			}
 		}
 		defer waitGroup.Done()
 	}()

@@ -47,7 +47,7 @@ func EncryptFile[Key any](
 
 func DecryptFile[Key any](
 	file *File,
-	decrypt func([]byte, Key) []byte,
+	decrypt func([]byte, Key) ([]byte, error),
 	privKey Key) error {
 
 	split := strings.Split(file.Path, ".")
@@ -65,9 +65,15 @@ func DecryptFile[Key any](
 
 		osFile.Close()
 
-		decrypted := decrypt(buffer, privKey)
+		decrypted, err := decrypt(buffer, privKey)
+		if err != nil {
+			return err
+		}
 
-		osFile, _ = os.Create(file.Path)
+		osFile, err = os.Create(file.Path)
+		if err != nil {
+			return err
+		}
 		_, err = osFile.Write(decrypted)
 		if err != nil {
 			return err

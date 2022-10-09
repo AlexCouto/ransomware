@@ -32,7 +32,7 @@ func RSAAESEncrypt(msg []byte, publicKey *rsa.PublicKey) ([]byte, error) {
 }
 
 // Decrypts messages encrypted with Encrypt()
-func RSAAESDecrypt(msg []byte, privateKey *rsa.PrivateKey) []byte {
+func RSAAESDecrypt(msg []byte, privateKey *rsa.PrivateKey) ([]byte, error) {
 
 	aesKeyEncrypted, encryptedMessage := msg[:256], msg[256:]
 
@@ -40,10 +40,10 @@ func RSAAESDecrypt(msg []byte, privateKey *rsa.PrivateKey) []byte {
 
 	decrypted, err := aesLib.DecryptAES(encryptedMessage, aesKey)
 	if err != nil {
-		return msg
+		return nil, err
 	}
 
-	return decrypted
+	return decrypted, nil
 }
 
 func ECDHAESEncrypt(msg []byte, publicKey *ecdsa.PublicKey) ([]byte, error) {
@@ -65,7 +65,7 @@ func ECDHAESEncrypt(msg []byte, publicKey *ecdsa.PublicKey) ([]byte, error) {
 	return encrypted, nil
 }
 
-func ECDHAESDecrypt(msg []byte, privateKey *ecdsa.PrivateKey) []byte {
+func ECDHAESDecrypt(msg []byte, privateKey *ecdsa.PrivateKey) ([]byte, error) {
 
 	cipherPublicMarshal, encryptedMessage := msg[:33], msg[33:]
 
@@ -77,8 +77,8 @@ func ECDHAESDecrypt(msg []byte, privateKey *ecdsa.PrivateKey) []byte {
 
 	decrypted, err := aesLib.DecryptAES(encryptedMessage, aesKey)
 	if err != nil {
-		return msg
+		return nil, err
 	}
 
-	return decrypted
+	return decrypted, nil
 }

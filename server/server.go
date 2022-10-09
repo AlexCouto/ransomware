@@ -12,12 +12,25 @@ var (
 	sPrivKey, _ = rsaLib.ReadRSAPrivateKey("privateKey.pem")
 )
 
-func decryptClientKey(path string) {
+func decryptClientKey(path string) error {
+	var typeString string
 	block, _ := os.ReadFile(path)
 
-	decodedBlock := encryption.RSAAESDecrypt(block, sPrivKey)
+	decodedBlock, err := encryption.RSAAESDecrypt(block, sPrivKey)
+	if err != nil {
+		return err
+	}
 
-	pemBlock := &pem.Block{Type: "RSA PRIVATE KEY", Bytes: decodedBlock}
+	if len(decodedBlock) == 66 {
+		typeString = "EC EXTENDEND PRIVATE KEY"
+	} else {
+		typeString = "RSA PRIVATE KEY"
+	}
+
+	pemBlock := &pem.Block{
+		Type:  typeString,
+		Bytes: decodedBlock,
+	}
 
 	keyFile, err := os.Create("cPrivateKey.pem")
 	if err != nil {
@@ -25,8 +38,13 @@ func decryptClientKey(path string) {
 	}
 
 	pem.Encode(keyFile, pemBlock)
+
+	return nil
 }
 
 func main() {
-	decryptClientKey(os.Args[1])
+	err := decryptClientKey(os.Args[1])
+	if err != nil {
+		fmt.Println(err)
+	}
 }

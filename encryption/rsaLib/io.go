@@ -13,7 +13,10 @@ func StoreRSAPrivateKey(path string, privateKey *rsa.PrivateKey) {
 
 	pemPrivateFile, _ := os.Create(path)
 
-	pemPrivateBlock := &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(privateKey)}
+	pemPrivateBlock := &pem.Block{
+		Type:  "RSA PRIVATE KEY",
+		Bytes: x509.MarshalPKCS1PrivateKey(privateKey),
+	}
 
 	pem.Encode(pemPrivateFile, pemPrivateBlock)
 	pemPrivateFile.Close()
@@ -49,7 +52,10 @@ func StoreRSAPublicKey(path string, publicKey *rsa.PublicKey) {
 
 	pemPublicFile, _ := os.Create(path)
 
-	pemPublicBlock := &pem.Block{Type: "RSA PUBLIC KEY", Bytes: x509.MarshalPKCS1PublicKey(publicKey)}
+	pemPublicBlock := &pem.Block{
+		Type:  "RSA PUBLIC KEY",
+		Bytes: x509.MarshalPKCS1PublicKey(publicKey),
+	}
 
 	pem.Encode(pemPublicFile, pemPublicBlock)
 	pemPublicFile.Close()
