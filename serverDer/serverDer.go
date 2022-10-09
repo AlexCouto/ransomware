@@ -39,10 +39,11 @@ func decryptClientKey(path string) (*eccLib.ExtendedPrivateKey, error) {
 
 func generateClientKeys(masterKey *eccLib.ExtendedPrivateKey) ([]*eccLib.ExtendedPrivateKey, error) {
 
-	var privChildKeys []*eccLib.ExtendedPrivateKey
 	var i uint16
-	var childsNumber uint16 = uint16(len(utils.FileType))
+	var childsNumber uint16 = utils.FileTypeLenght
 	var err error
+
+	var privChildKeys = make([]*eccLib.ExtendedPrivateKey, childsNumber)
 
 	for i = 0; i < childsNumber; i++ {
 		privChildKeys[i], err = recurDerivPrivKey(masterKey, i+1, childsNumber, 3)

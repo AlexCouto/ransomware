@@ -15,6 +15,7 @@ const (
 	TEMP
 	CONFIG
 	SOURCE
+	FileTypeLenght
 )
 
 var (

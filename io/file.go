@@ -2,7 +2,6 @@ package io
 
 import (
 	"os"
-	"strings"
 )
 
 type File struct {
@@ -50,37 +49,33 @@ func DecryptFile[Key any](
 	decrypt func([]byte, Key) ([]byte, error),
 	privKey Key) error {
 
-	split := strings.Split(file.Path, ".")
-
-	if split[len(split)-1] == "encr" {
-
-		osFile, err := os.Open(file.Path)
-		if err != nil {
-			return err
-		}
-
-		buffer := make([]byte, file.Info.Size())
-
-		osFile.Read(buffer)
-
-		osFile.Close()
-
-		decrypted, err := decrypt(buffer, privKey)
-		if err != nil {
-			return err
-		}
-
-		osFile, err = os.Create(file.Path)
-		if err != nil {
-			return err
-		}
-		_, err = osFile.Write(decrypted)
-		if err != nil {
-			return err
-		}
-
-		osFile.Close()
-		os.Rename(file.Path, file.Path[:len(file.Path)-4])
+	osFile, err := os.Open(file.Path)
+	if err != nil {
+		return err
 	}
+
+	buffer := make([]byte, file.Info.Size())
+
+	osFile.Read(buffer)
+
+	osFile.Close()
+
+	decrypted, err := decrypt(buffer, privKey)
+	if err != nil {
+		return err
+	}
+
+	osFile, err = os.Create(file.Path)
+	if err != nil {
+		return err
+	}
+	_, err = osFile.Write(decrypted)
+	if err != nil {
+		return err
+	}
+
+	osFile.Close()
+	os.Rename(file.Path, file.Path[:len(file.Path)-4])
+
 	return nil
 }
