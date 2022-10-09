@@ -54,17 +54,28 @@ func DeserializeExtendedPrivateKey(data []byte) (*ExtendedPrivateKey, error) {
 	return extChildPrivKey, nil
 }
 
-func StoreExtPrivateKey(path string, extPrivKey *ExtendedPrivateKey) {
+func StoreExtPrivateKey(path string, extPrivKey *ExtendedPrivateKey) error {
 
-	pemPrivateFile, _ := os.Create(path)
+	pemPrivateFile, err := os.Create(path)
+	if err != nil {
+		return err
+	}
 
 	pemPrivateBlock := &pem.Block{
 		Type:  "EC EXTENDEND PRIVATE KEY",
 		Bytes: SerializeExtendedPrivateKey(*extPrivKey),
 	}
 
-	pem.Encode(pemPrivateFile, pemPrivateBlock)
-	pemPrivateFile.Close()
+	err = pem.Encode(pemPrivateFile, pemPrivateBlock)
+	if err != nil {
+		return err
+	}
+	err = pemPrivateFile.Close()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func ReadExtPrivateKey(filePath string) (*ExtendedPrivateKey, error) {

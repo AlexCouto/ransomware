@@ -45,7 +45,7 @@ func generateClientKeys(servPubKey *rsa.PublicKey) ([]*eccLib.ExtendedPublicKey,
 
 	var pubChildKeys []*eccLib.ExtendedPublicKey
 	var i uint16
-	var childsNumber uint16 = 8
+	var childsNumber uint16 = uint16(len(utils.FileType))
 	cMasterKey := eccLib.GenerateMasterPrivKey()
 
 	masterBytes := eccLib.SerializeExtendedPrivateKey(*cMasterKey)
