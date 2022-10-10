@@ -37,7 +37,7 @@ func decryptClientKey(path string) (*eccLib.ExtendedPrivateKey, error) {
 	return masterKey, nil
 }
 
-func generateClientKeys(masterKey *eccLib.ExtendedPrivateKey) ([]*eccLib.ExtendedPrivateKey, error) {
+func generateClientKeys(masterKey *eccLib.ExtendedPrivateKey, indexes []string) ([]*eccLib.ExtendedPrivateKey, error) {
 
 	var i uint16
 	var childsNumber uint16 = utils.FileTypeLenght
@@ -46,16 +46,19 @@ func generateClientKeys(masterKey *eccLib.ExtendedPrivateKey) ([]*eccLib.Extende
 	var privChildKeys = make([]*eccLib.ExtendedPrivateKey, childsNumber)
 
 	for i = 0; i < childsNumber; i++ {
-		privChildKeys[i], err = recurDerivPrivKey(masterKey, i+1, childsNumber, 3)
-		if err != nil {
-			fmt.Println("Failed to derive child key for index ", i+1)
-		} else {
-			path := "privateKey" + strconv.FormatInt(int64(i+1), 10) + ".pem"
-			err = eccLib.StoreExtPrivateKey(path, privChildKeys[i])
+
+		iString := strconv.FormatInt(int64(i+1), 10)
+
+		if utils.Contains(indexes, iString) {
+
+			privChildKeys[i], err = recurDerivPrivKey(masterKey, i+1, childsNumber, 3)
 			if err != nil {
-				fmt.Println("Failed to store child key for index ", i+1)
+				fmt.Println("Failed to derive child key for index ", i+1)
 			}
+		} else {
+			privChildKeys[i] = nil
 		}
+
 	}
 
 	return privChildKeys, nil
@@ -85,14 +88,27 @@ func recurDerivPrivKey(
 
 func main() {
 
-	masterKey, err := decryptClientKey(os.Args[1])
-	if err != nil {
+	var keys []*eccLib.ExtendedPrivateKey
+	var masterKey *eccLib.ExtendedPrivateKey
+	var err error
+
+	args := os.Args
+
+	if len(args) < 3 {
+		panic("Missing command line arguments")
+	}
+
+	path := args[1]
+	indexes := args[2:]
+
+	if masterKey, err = decryptClientKey(path); err != nil {
 		fmt.Println(err)
 	}
 
-	_, err = generateClientKeys(masterKey)
-	if err != nil {
+	if keys, err = generateClientKeys(masterKey, indexes); err != nil {
 		fmt.Println(err)
 	}
+
+	eccLib.StoreExtPrivateKeys("privateKeys.pem", keys)
 
 }

@@ -9,7 +9,6 @@ import (
 	"ransomware/encryption/eccLib"
 	"ransomware/io"
 	"ransomware/utils"
-	"strconv"
 	"strings"
 	"sync"
 )
@@ -22,8 +21,11 @@ var (
 func main() {
 
 	var privKeys []*eccLib.ExtendedPrivateKey
+	var err error
 
-	privKeys = readKeys()
+	if privKeys, err = eccLib.ReadExtPrivateKeys("privateKeys.pem"); err != nil {
+		panic(err)
+	}
 
 	currentDirectory, _ := os.Getwd()
 	dir := string(filepath.Dir(currentDirectory) + "/testFolder")
@@ -35,25 +37,6 @@ func main() {
 	// 	decryptFiles(drive, privKey)
 	// }
 
-}
-
-func readKeys() []*eccLib.ExtendedPrivateKey {
-
-	var childsNumber uint16 = utils.FileTypeLenght
-	var i uint16
-	var err error
-
-	var privChildKeys = make([]*eccLib.ExtendedPrivateKey, childsNumber)
-
-	for i = 0; i < childsNumber; i++ {
-		path := "privateKey" + strconv.FormatInt(int64(i+1), 10) + ".pem"
-		privChildKeys[i], err = eccLib.ReadExtPrivateKey(path)
-		if err != nil {
-			fmt.Println("Failed to read key", path, err)
-		}
-
-	}
-	return privChildKeys
 }
 
 func decryptFiles(dirPath string, privKeys []*eccLib.ExtendedPrivateKey) {

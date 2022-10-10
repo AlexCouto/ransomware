@@ -103,3 +103,83 @@ func ReadExtPrivateKey(filePath string) (*ExtendedPrivateKey, error) {
 
 	return extPrivKey, nil
 }
+
+func StoreExtPrivateKeys(path string, extPrivKeys []*ExtendedPrivateKey) error {
+
+	var i int
+	var privKey *ExtendedPrivateKey
+
+	pemPrivateFile, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+
+	for i = 0; i < len(extPrivKeys); i++ {
+
+		privKey = extPrivKeys[i]
+		if privKey != nil {
+			pemPrivateBlock := &pem.Block{
+				Type:  "EC EXTENDEND PRIVATE KEY",
+				Bytes: SerializeExtendedPrivateKey(*privKey),
+			}
+
+			err = pem.Encode(pemPrivateFile, pemPrivateBlock)
+			if err != nil {
+				return err
+			}
+		} else {
+			pemPrivateFile.WriteString("/")
+		}
+
+	}
+
+	err = pemPrivateFile.Close()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func ReadExtPrivateKeys(filePath string) ([]*ExtendedPrivateKey, error) {
+
+	var data *pem.Block
+
+	childsNumber := utils.FileTypeLenght
+	keys := make([]*ExtendedPrivateKey, childsNumber)
+
+	file, err := os.Open(filePath)
+	if err != nil {
+		return nil, err
+	}
+
+	pemFileInfo, err := file.Stat()
+	if err != nil {
+		return nil, err
+	}
+	size := pemFileInfo.Size()
+
+	pemBytes := make([]byte, size)
+	buffer := bufio.NewReader(file)
+	buffer.Read(pemBytes)
+
+	for i := 0; i < childsNumber; i++ {
+
+		if pemBytes[0] != '/' {
+			data, pemBytes = pem.Decode([]byte(pemBytes))
+
+			keys[i], err = DeserializeExtendedPrivateKey(data.Bytes)
+			if err != nil {
+				file.Close()
+				return nil, err
+			}
+		} else {
+			keys[i] = nil
+			pemBytes = pemBytes[1:]
+		}
+	}
+
+	file.Close()
+
+	return keys, nil
+}
