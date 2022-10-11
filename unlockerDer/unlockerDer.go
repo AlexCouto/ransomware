@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/ecdsa"
 	"fmt"
 	"io/fs"
 	"os"
@@ -20,10 +21,10 @@ var (
 
 func main() {
 
-	var privKeys []*eccLib.ExtendedPrivateKey
+	var privKeys []*ecdsa.PrivateKey
 	var err error
 
-	if privKeys, err = eccLib.ReadExtPrivateKeys("privateKeys.pem"); err != nil {
+	if privKeys, err = eccLib.ReadMultPrivKeys("keys.pem"); err != nil {
 		panic(err)
 	}
 
@@ -39,7 +40,7 @@ func main() {
 
 }
 
-func decryptFiles(dirPath string, privKeys []*eccLib.ExtendedPrivateKey) {
+func decryptFiles(dirPath string, privKeys []*ecdsa.PrivateKey) {
 
 	var ext string
 	waitGroup.Add(1)
@@ -82,7 +83,7 @@ func decryptFiles(dirPath string, privKeys []*eccLib.ExtendedPrivateKey) {
 
 			fileType, mapContains := utils.FileType[file.Extension]
 			if mapContains && privKeys[fileType] != nil {
-				err := io.DecryptFile(&file, encryption.ECDHAESDecrypt, &privKeys[fileType].PrivateKey)
+				err := io.DecryptFile(&file, encryption.ECDHAESDecrypt, privKeys[fileType])
 				if err != nil {
 					fmt.Println("Error decrypting file", file.Path, "Error:", err)
 				}

@@ -2,6 +2,7 @@ package eccLib
 
 import (
 	"bufio"
+	"crypto/ecdsa"
 	"crypto/rand"
 	"encoding/binary"
 	"encoding/pem"
@@ -54,6 +55,21 @@ func DeserializeExtendedPrivateKey(data []byte) (*ExtendedPrivateKey, error) {
 	return extChildPrivKey, nil
 }
 
+func SerializePrivKey(privKey *ecdsa.PrivateKey) []byte {
+
+	privKeyBytes := make([]byte, 32)
+	privKey.D.FillBytes(privKeyBytes)
+
+	return privKeyBytes
+}
+
+func DeserializePrivKey(data []byte) (*ecdsa.PrivateKey, error) {
+
+	privKey := NewPrivateKey(utils.Parse256(data))
+
+	return privKey, nil
+}
+
 func StoreExtPrivateKey(path string, extPrivKey *ExtendedPrivateKey) error {
 
 	pemPrivateFile, err := os.Create(path)
@@ -104,10 +120,10 @@ func ReadExtPrivateKey(filePath string) (*ExtendedPrivateKey, error) {
 	return extPrivKey, nil
 }
 
-func StoreExtPrivateKeys(path string, extPrivKeys []*ExtendedPrivateKey) error {
+func StoreMultPrivKeys(path string, extPrivKeys []*ecdsa.PrivateKey) error {
 
 	var i int
-	var privKey *ExtendedPrivateKey
+	var privKey *ecdsa.PrivateKey
 
 	pemPrivateFile, err := os.Create(path)
 	if err != nil {
@@ -118,17 +134,18 @@ func StoreExtPrivateKeys(path string, extPrivKeys []*ExtendedPrivateKey) error {
 
 		privKey = extPrivKeys[i]
 		if privKey != nil {
+
 			pemPrivateBlock := &pem.Block{
-				Type:  "EC EXTENDEND PRIVATE KEY",
-				Bytes: SerializeExtendedPrivateKey(*privKey),
+				Type:  "EC PRIVATE KEY",
+				Bytes: SerializePrivKey(privKey),
 			}
 
-			err = pem.Encode(pemPrivateFile, pemPrivateBlock)
-			if err != nil {
+			if err = pem.Encode(pemPrivateFile, pemPrivateBlock); err != nil {
 				return err
 			}
+
 		} else {
-			pemPrivateFile.WriteString("/")
+			pemPrivateFile.WriteString("/\n")
 		}
 
 	}
@@ -141,12 +158,12 @@ func StoreExtPrivateKeys(path string, extPrivKeys []*ExtendedPrivateKey) error {
 	return nil
 }
 
-func ReadExtPrivateKeys(filePath string) ([]*ExtendedPrivateKey, error) {
+func ReadMultPrivKeys(filePath string) ([]*ecdsa.PrivateKey, error) {
 
 	var data *pem.Block
 
 	childsNumber := utils.FileTypeLenght
-	keys := make([]*ExtendedPrivateKey, childsNumber)
+	keys := make([]*ecdsa.PrivateKey, childsNumber)
 
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -168,14 +185,14 @@ func ReadExtPrivateKeys(filePath string) ([]*ExtendedPrivateKey, error) {
 		if pemBytes[0] != '/' {
 			data, pemBytes = pem.Decode([]byte(pemBytes))
 
-			keys[i], err = DeserializeExtendedPrivateKey(data.Bytes)
+			keys[i], err = DeserializePrivKey(data.Bytes)
 			if err != nil {
 				file.Close()
 				return nil, err
 			}
 		} else {
 			keys[i] = nil
-			pemBytes = pemBytes[1:]
+			pemBytes = pemBytes[2:]
 		}
 	}
 

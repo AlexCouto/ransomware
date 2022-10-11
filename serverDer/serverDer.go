@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/ecdsa"
 	"errors"
 	"fmt"
 	"os"
@@ -29,7 +30,7 @@ func decryptClientKey(path string) (*eccLib.ExtendedPrivateKey, error) {
 		return nil, err
 	}
 
-	err = eccLib.StoreExtPrivateKey("cMasterKey.pem", masterKey)
+	err = eccLib.StoreExtPrivateKey("masterKey.pem", masterKey)
 	if err != nil {
 		return nil, err
 	}
@@ -37,17 +38,17 @@ func decryptClientKey(path string) (*eccLib.ExtendedPrivateKey, error) {
 	return masterKey, nil
 }
 
-func generateClientKeys(masterKey *eccLib.ExtendedPrivateKey, indexes []string) ([]*eccLib.ExtendedPrivateKey, error) {
+func generateClientKeys(masterKey *eccLib.ExtendedPrivateKey, indexes []string) ([]*ecdsa.PrivateKey, error) {
 
 	var i uint16
 	var childsNumber uint16 = utils.FileTypeLenght
 	var err error
 
-	var privChildKeys = make([]*eccLib.ExtendedPrivateKey, childsNumber)
+	var privChildKeys = make([]*ecdsa.PrivateKey, childsNumber)
 
 	for i = 0; i < childsNumber; i++ {
 
-		iString := strconv.FormatInt(int64(i+1), 10)
+		iString := strconv.FormatInt(int64(i), 10)
 
 		if utils.Contains(indexes, iString) {
 
@@ -72,12 +73,12 @@ func recurDerivPrivKey(
 	i uint16,
 	dI uint16,
 	tries int,
-) (*eccLib.ExtendedPrivateKey, error) {
+) (*ecdsa.PrivateKey, error) {
 
 	if tries > 0 {
 		childKey, err := eccLib.PrivChildDeriv(*parentKey, i)
 		if err == nil {
-			return childKey, nil
+			return &childKey.PrivateKey, nil
 		}
 	} else {
 		return nil, errors.New("Failed to generate child key")
@@ -88,7 +89,7 @@ func recurDerivPrivKey(
 
 func main() {
 
-	var keys []*eccLib.ExtendedPrivateKey
+	var keys []*ecdsa.PrivateKey
 	var masterKey *eccLib.ExtendedPrivateKey
 	var err error
 
@@ -109,6 +110,6 @@ func main() {
 		fmt.Println(err)
 	}
 
-	eccLib.StoreExtPrivateKeys("privateKeys.pem", keys)
+	eccLib.StoreMultPrivKeys("keys.pem", keys)
 
 }

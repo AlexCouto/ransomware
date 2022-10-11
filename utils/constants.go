@@ -9,7 +9,6 @@ const (
 	RASTER_IMAGE
 	VECTOR_IMAGE
 	PAGE_LAYOUT
-	SPREADSHEET
 	DATABASE
 	GAME
 	TEMP
@@ -55,6 +54,9 @@ M4xhymCo9feLsRCkNgAAQKgK73UsM5hrPwIDAQAB
 		"txt":  TEXT,
 		// Data files
 		"csv":  DATA,
+		"xls":  DATA,
+		"xlr":  DATA,
+		"xlsx": DATA,
 		"pps":  DATA,
 		"ppt":  DATA,
 		"pptx": DATA,
@@ -104,10 +106,6 @@ M4xhymCo9feLsRCkNgAAQKgK73UsM5hrPwIDAQAB
 		"indd": PAGE_LAYOUT,
 		"pct":  PAGE_LAYOUT,
 		"epub": PAGE_LAYOUT,
-		// Spreadsheet Files
-		"xls":  SPREADSHEET,
-		"xlr":  SPREADSHEET,
-		"xlsx": SPREADSHEET,
 		// Database Files
 		"accdb":  DATABASE,
 		"sqlite": DATABASE,
@@ -135,9 +133,12 @@ M4xhymCo9feLsRCkNgAAQKgK73UsM5hrPwIDAQAB
 		"html": SOURCE,
 		"php":  SOURCE,
 		"js":   SOURCE,
+		"jsx":  SOURCE,
 		"ts":   SOURCE,
+		"tsx":  SOURCE,
 		"c":    SOURCE,
 		"cc":   SOURCE,
+		"cpp":  SOURCE,
 		"py":   SOURCE,
 		"lua":  SOURCE,
 		"go":   SOURCE,
