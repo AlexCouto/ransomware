@@ -15,8 +15,7 @@ import (
 )
 
 var (
-	filesToVisit = make(chan io.File)
-	waitGroup    sync.WaitGroup
+	waitGroup sync.WaitGroup
 )
 
 func main() {
@@ -39,6 +38,7 @@ func main() {
 
 func decryptFiles(dirPath string, cPrivKey *rsa.PrivateKey) {
 
+	var filesToVisit = make(chan io.File)
 	var ext string
 	waitGroup.Add(1)
 	go func() {

