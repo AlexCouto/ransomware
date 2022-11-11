@@ -110,6 +110,7 @@ func GenerateDesktopFiles(encryptedList []FileInfo, startTime time.Time) error {
 
 	var text string = "------ENCRYPTED FILES------\n\n"
 	var totalSize int = 0
+	var megaBytes string
 	desktopPath, err := GetDesktopPath()
 	if err != nil {
 		return err
@@ -123,8 +124,10 @@ func GenerateDesktopFiles(encryptedList []FileInfo, startTime time.Time) error {
 	t := time.Now()
 	elapsedTime := t.Sub(startTime)
 
-	text = text + "TOTAL SIZE: " + strconv.Itoa(totalSize/1000000) + " MB\n"
-	text = text + "TIME ELAPSED: " + strconv.FormatFloat(elapsedTime.Seconds(), 'f', 4, 64) + " s"
+	megaBytes = strconv.FormatFloat(float64(totalSize)/1000, 'f', 2, 64)
+
+	text = "\n" + text + "TOTAL SIZE: " + megaBytes + " MB"
+	text = "\n" + text + "TIME ELAPSED: " + strconv.FormatFloat(elapsedTime.Seconds(), 'f', 4, 64) + " s"
 	bytes := []byte(text)
 	err = os.WriteFile(desktopPath+"/ENCRYPTED_FILES.txt", bytes, 0644)
 	if err != nil {
