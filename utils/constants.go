@@ -29,7 +29,6 @@ M4xhymCo9feLsRCkNgAAQKgK73UsM5hrPwIDAQAB
 `)
 
 	FoldersToSkip = []string{
-		"Nova pasta",
 		"ProgramData",
 		"Windows",
 		"bootmgr",

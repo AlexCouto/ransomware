@@ -40,10 +40,6 @@ func ECDHGenerateEncryptionKey(pubKey *ecdsa.PublicKey) ([]byte, *ecdsa.PublicKe
 
 	x, _ := Curve.ScalarMult(pubKey.X, pubKey.Y, cipherTextPrivKey.D.Bytes())
 
-	// hash := sha256.New()
-	// hash.Write(x.Bytes())
-	// sharedECCKey := hash.Sum(nil)
-
 	reader := hkdf.New(sha256.New, x.Bytes(), []byte("AES Key"), nil)
 	sharedECCKey := make([]byte, 32)
 
@@ -58,10 +54,6 @@ func ECDHGenerateEncryptionKey(pubKey *ecdsa.PublicKey) ([]byte, *ecdsa.PublicKe
 func ECDHGenerateDecryptionKey(privKey *ecdsa.PrivateKey, cipherTextPubKey *ecdsa.PublicKey) ([]byte, error) {
 
 	x, _ := Curve.ScalarMult(cipherTextPubKey.X, cipherTextPubKey.Y, privKey.D.Bytes())
-
-	// hash := sha256.New()
-	// hash.Write(x.Bytes())
-	// sharedECCKey := hash.Sum(nil)
 
 	reader := hkdf.New(sha256.New, x.Bytes(), []byte("AES Key"), nil)
 	sharedECCKey := make([]byte, 32)

