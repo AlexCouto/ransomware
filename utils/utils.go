@@ -15,6 +15,7 @@ import (
 	"golang.org/x/text/encoding/charmap"
 )
 
+// Returns true if slice contains elementm, false if not
 func Contains[T comparable](s []T, e T) bool {
 	for _, v := range s {
 		if v == e {
@@ -24,6 +25,7 @@ func Contains[T comparable](s []T, e T) bool {
 	return false
 }
 
+// Decodes byte slice encoded in Code Page 850
 func decodePage850(msg []byte) (string, error) {
 
 	reader := charmap.CodePage850.NewDecoder().Reader(bytes.NewReader(msg))
@@ -53,6 +55,7 @@ func GetDesktopPath() (string, error) {
 	return desktopPath, nil
 }
 
+// Computes HMACSHA-512 of a given message and a key
 func ComputeHmac512(msg []byte, key []byte) [64]byte {
 	var result [64]byte
 	hash := hmac.New(sha512.New, key)
@@ -62,6 +65,7 @@ func ComputeHmac512(msg []byte, key []byte) [64]byte {
 	return result
 }
 
+// Converts uint16 to Big Endian byte slice
 func Serialize16Int(i uint16) []byte {
 	out := make([]byte, 2)
 	binary.BigEndian.PutUint16(out, i)
@@ -69,6 +73,7 @@ func Serialize16Int(i uint16) []byte {
 	return out
 }
 
+// Converts big.Int into Big Endian byte slice
 func Serialize256Int(i *big.Int) []byte {
 	out := make([]byte, 32)
 	i.FillBytes(out)
@@ -76,10 +81,12 @@ func Serialize256Int(i *big.Int) []byte {
 	return out
 }
 
+// Converts Big Endian byte slice to big.Int
 func Parse256(sequence []byte) *big.Int {
 	return new(big.Int).SetBytes(sequence[:])
 }
 
+// Returns slice containing paths for all drives
 func GetDrives() []string {
 	bufferLength, _ := windows.GetLogicalDriveStrings(0, nil)
 

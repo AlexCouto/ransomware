@@ -5,7 +5,10 @@ import (
 	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/sha256"
+	"io"
 	"math/big"
+
+	"golang.org/x/crypto/hkdf"
 )
 
 var (
@@ -25,7 +28,10 @@ type ExtendedPublicKey struct {
 	Index     uint16
 }
 
+// Generates random cipher ecc key pair and then calculates shared secret = pubKey * cipherPrivKey. Returns SHA256
+// of the x coordinate of the result and the cipher public key.
 func ECDHGenerateEncryptionKey(pubKey *ecdsa.PublicKey) ([]byte, *ecdsa.PublicKey, error) {
+
 	cipherTextPrivKey, err := ecdsa.GenerateKey(Curve, rand.Reader)
 	if err != nil {
 		return nil, nil, err
@@ -34,22 +40,37 @@ func ECDHGenerateEncryptionKey(pubKey *ecdsa.PublicKey) ([]byte, *ecdsa.PublicKe
 
 	x, _ := Curve.ScalarMult(pubKey.X, pubKey.Y, cipherTextPrivKey.D.Bytes())
 
-	hash := sha256.New()
-	hash.Write(x.Bytes())
-	sharedECCKey := hash.Sum(nil)
+	// hash := sha256.New()
+	// hash.Write(x.Bytes())
+	// sharedECCKey := hash.Sum(nil)
+
+	reader := hkdf.New(sha256.New, x.Bytes(), []byte("AES Key"), nil)
+	sharedECCKey := make([]byte, 32)
+
+	if _, err := io.ReadFull(reader, sharedECCKey); err != nil {
+		return nil, nil, err
+	}
 
 	return sharedECCKey[:], &ciperTextPubKey, nil
 }
 
-func ECDHGenerateDecryptionKey(privKey *ecdsa.PrivateKey, cipherTextPubKey *ecdsa.PublicKey) []byte {
+// Calculates shared secret = cipherTextPubKey * privKey and returns SHA256 of the result
+func ECDHGenerateDecryptionKey(privKey *ecdsa.PrivateKey, cipherTextPubKey *ecdsa.PublicKey) ([]byte, error) {
 
 	x, _ := Curve.ScalarMult(cipherTextPubKey.X, cipherTextPubKey.Y, privKey.D.Bytes())
 
-	hash := sha256.New()
-	hash.Write(x.Bytes())
-	sharedECCKey := hash.Sum(nil)
+	// hash := sha256.New()
+	// hash.Write(x.Bytes())
+	// sharedECCKey := hash.Sum(nil)
 
-	return sharedECCKey[:]
+	reader := hkdf.New(sha256.New, x.Bytes(), []byte("AES Key"), nil)
+	sharedECCKey := make([]byte, 32)
+
+	if _, err := io.ReadFull(reader, sharedECCKey); err != nil {
+		return nil, err
+	}
+
+	return sharedECCKey[:], nil
 }
 
 func Point(p []byte) (*big.Int, *big.Int) {
