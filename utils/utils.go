@@ -126,8 +126,8 @@ func GenerateDesktopFiles(encryptedList []FileInfo, startTime time.Time) error {
 
 	megaBytes = strconv.FormatFloat(float64(totalSize)/1000, 'f', 2, 64)
 
-	text = "\n" + text + "TOTAL SIZE: " + megaBytes + " MB"
-	text = "\n" + text + "TIME ELAPSED: " + strconv.FormatFloat(elapsedTime.Seconds(), 'f', 4, 64) + " s"
+	text = text + "\n" + "TOTAL SIZE: " + megaBytes + " MB"
+	text = text + "\n" + "TIME ELAPSED: " + strconv.FormatFloat(elapsedTime.Seconds(), 'f', 4, 64) + " s"
 	bytes := []byte(text)
 	err = os.WriteFile(desktopPath+"/ENCRYPTED_FILES.txt", bytes, 0644)
 	if err != nil {
