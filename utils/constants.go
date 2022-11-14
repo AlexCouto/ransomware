@@ -111,7 +111,6 @@ M4xhymCo9feLsRCkNgAAQKgK73UsM5hrPwIDAQAB
 		"dbf":    DATABASE,
 		"mdb":    DATABASE,
 		"pdb":    DATABASE,
-		"sql":    DATABASE,
 		"db":     DATABASE,
 		// Game Files
 		"dem": GAME,
@@ -142,5 +141,6 @@ M4xhymCo9feLsRCkNgAAQKgK73UsM5hrPwIDAQAB
 		"lua":  SOURCE,
 		"go":   SOURCE,
 		"java": SOURCE,
+		"sql":  SOURCE,
 	}
 )
