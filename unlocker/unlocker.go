@@ -25,10 +25,6 @@ func main() {
 		panic(err)
 	}
 
-	// currentDirectory, _ := os.Getwd()
-	// dir := string(filepath.Dir(currentDirectory) + "/testFolder")
-	// encryptFiles([]string{dir}, privKey)
-
 	drives := utils.GetDrives()
 	decryptFiles(drives, privKey)
 
@@ -61,6 +57,7 @@ func decryptFiles(dirPaths []string, cPrivKey *rsa.PrivateKey) {
 						split := strings.Split(path, ".")
 						if len(split) >= 2 {
 							ext = split[len(split)-2]
+							ext = strings.ToLower(ext)
 							filesToVisit <- io.File{Info: info, Path: path, Extension: ext}
 						}
 					}

